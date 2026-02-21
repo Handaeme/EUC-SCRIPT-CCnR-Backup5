@@ -1,0 +1,18 @@
+{
+    "name": "citra/system",
+    "description": "CITRA Script Management System",
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.29",
+        "phpoffice/phpword": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.0"
+        }
+    }
+}

@@ -1,0 +1,793 @@
+[2026-02-02 04:40:11] Attempted login for user: spv01
+[2026-02-02 04:40:11] Non-LDAP login successful for user: spv01
+[2026-02-02 04:40:11] Redirecting spv01 to index.php
+[2026-02-02 04:40:18] Attempted login for user: pic01
+[2026-02-02 04:40:18] Non-LDAP login successful for user: pic01
+[2026-02-02 04:40:18] Redirecting pic01 to index.php
+[2026-02-02 04:40:25] Attempted login for user: proc01
+[2026-02-02 04:46:09] Attempted login for user: maker01
+[2026-02-02 04:46:09] Non-LDAP login successful for user: maker01
+[2026-02-02 04:46:09] Redirecting maker01 to index.php
+[2026-02-02 05:04:01] Attempted login for user: proc01
+[2026-02-02 05:17:54] Attempted login for user: proc01
+[2026-02-02 05:17:55] LDAP bind failed for user: proc01. Error: Local error
+[2026-02-02 05:20:14] Attempted login for user: proc01
+[2026-02-02 05:20:25] Login failed for user: proc01. LDAP Err: Local error. Local Pass: Invalid.
+[2026-02-02 05:20:37] Attempted login for user: proc01
+[2026-02-02 05:20:44] Login failed for user: proc01. LDAP Err: Local error. Local Pass: Invalid.
+[2026-02-02 05:25:17] Attempted login for user: proc01
+[2026-02-02 05:25:17] Local login successful for user: proc01 (LDAP fallback)
+[2026-02-02 05:25:17] Redirecting proc01 to index.php
+[2026-02-02 05:31:33] Attempted login for user: spv01
+[2026-02-02 05:31:33] Local login successful for user: spv01 (LDAP fallback)
+[2026-02-02 05:31:33] Redirecting spv01 to index.php
+[2026-02-02 05:32:42] Attempted login for user: maker01
+[2026-02-02 05:32:42] Local login successful for user: maker01 (LDAP fallback)
+[2026-02-02 05:32:42] Redirecting maker01 to index.php
+[2026-02-02 05:33:37] Attempted login for user: spv01
+[2026-02-02 05:33:38] Local login successful for user: spv01 (LDAP fallback)
+[2026-02-02 05:33:38] Redirecting spv01 to index.php
+[2026-02-02 05:34:19] Attempted login for user: maker01
+[2026-02-02 05:34:20] Local login successful for user: maker01 (LDAP fallback)
+[2026-02-02 05:34:20] Redirecting maker01 to index.php
+[2026-02-02 05:34:51] Attempted login for user: spv01
+[2026-02-02 05:34:51] Local login successful for user: spv01 (LDAP fallback)
+[2026-02-02 05:34:51] Redirecting spv01 to index.php
+[2026-02-02 05:35:09] Attempted login for user: pic01
+[2026-02-02 05:35:10] Local login successful for user: pic01 (LDAP fallback)
+[2026-02-02 05:35:10] Redirecting pic01 to index.php
+[2026-02-02 05:35:29] Attempted login for user: proc01
+[2026-02-02 05:35:29] Local login successful for user: proc01 (LDAP fallback)
+[2026-02-02 05:35:29] Redirecting proc01 to index.php
+[2026-02-02 07:43:44] Attempted login for user: maker01
+[2026-02-02 07:43:44] Local login successful for user: maker01 (LDAP fallback)
+[2026-02-02 07:43:44] Redirecting maker01 to index.php
+[2026-02-02 07:51:25] Attempted login for user: spv01
+[2026-02-02 07:51:26] Local login successful for user: spv01 (LDAP fallback)
+[2026-02-02 07:51:26] Redirecting spv01 to index.php
+[2026-02-02 07:51:58] Attempted login for user: maker01
+[2026-02-02 07:51:59] Local login successful for user: maker01 (LDAP fallback)
+[2026-02-02 07:51:59] Redirecting maker01 to index.php
+[2026-02-02 08:33:40] Attempted login for user: spv01
+[2026-02-02 08:33:41] Local login successful for user: spv01 (LDAP fallback)
+[2026-02-02 08:33:41] Redirecting spv01 to index.php
+[2026-02-02 08:34:52] Attempted login for user: pic01
+[2026-02-02 08:34:52] Local login successful for user: pic01 (LDAP fallback)
+[2026-02-02 08:34:52] Redirecting pic01 to index.php
+[2026-02-02 08:36:55] Attempted login for user: proc02
+[2026-02-02 08:36:55] Local login successful for user: proc02 (LDAP fallback)
+[2026-02-02 08:36:55] Redirecting proc02 to index.php
+[2026-02-02 08:43:03] Attempted login for user: admin
+[2026-02-02 08:43:03] Local login successful for user: admin (LDAP fallback)
+[2026-02-02 08:43:03] Redirecting admin to index.php
+[2026-02-02 09:02:40] Attempted login for user: sf0123
+[2026-02-02 09:02:40] LDAP Bind Failed for sf0123: LDAP Error: Local error
+[2026-02-02 09:02:49] Attempted login for user: sf0123
+[2026-02-02 09:02:49] LDAP Bind Failed for sf0123: LDAP Error: Local error
+[2026-02-02 09:03:00] Attempted login for user: admin123
+[2026-02-02 09:03:00] User not found or inactive: admin123
+[2026-02-02 09:03:04] Attempted login for user: admin
+[2026-02-02 09:03:04] Local login successful for user: admin
+[2026-02-02 09:03:04] Redirecting admin to index.php
+[2026-02-02 09:03:22] Attempted login for user: proc01
+[2026-02-02 09:03:22] LDAP Bind Failed for proc01: LDAP Error: Local error
+[2026-02-02 09:03:26] Attempted login for user: proc01
+[2026-02-02 09:03:26] LDAP Bind Failed for proc01: LDAP Error: Local error
+[2026-02-02 09:03:43] Attempted login for user: admin
+[2026-02-02 09:03:43] Local login successful for user: admin
+[2026-02-02 09:03:43] Redirecting admin to index.php
+[2026-02-02 09:10:12] Attempted login for user: sf0123
+[2026-02-02 09:10:12] Local login successful for user: sf0123
+[2026-02-02 09:10:12] Redirecting sf0123 to index.php
+[2026-02-02 09:11:34] Attempted login for user: maker01
+[2026-02-02 09:11:34] Local login successful for user: maker01
+[2026-02-02 09:11:34] Redirecting maker01 to index.php
+[2026-02-02 09:12:07] Attempted login for user: admin
+[2026-02-02 09:12:07] Local login successful for user: admin
+[2026-02-02 09:12:07] Redirecting admin to index.php
+[2026-02-02 09:12:23] Attempted login for user: proc01
+[2026-02-02 09:12:23] Local login successful for user: proc01
+[2026-02-02 09:12:23] Redirecting proc01 to index.php
+[2026-02-02 09:13:13] Attempted login for user: maker01
+[2026-02-02 09:13:13] Local login successful for user: maker01
+[2026-02-02 09:13:13] Redirecting maker01 to index.php
+[2026-02-02 09:37:34] Attempted login for user: proc01
+[2026-02-02 09:37:34] Local login successful for user: proc01
+[2026-02-02 09:37:34] Redirecting proc01 to index.php
+[2026-02-02 09:38:05] Attempted login for user: maker01
+[2026-02-02 09:38:05] Local login successful for user: maker01
+[2026-02-02 09:38:05] Redirecting maker01 to index.php
+[2026-02-02 09:51:45] Attempted login for user: spv01
+[2026-02-02 09:51:45] Local login successful for user: spv01
+[2026-02-02 09:51:45] Redirecting spv01 to index.php
+[2026-02-02 09:58:12] Attempted login for user: maker01
+[2026-02-02 09:58:12] Local login successful for user: maker01
+[2026-02-02 09:58:12] Redirecting maker01 to index.php
+[2026-02-02 10:04:37] Attempted login for user: spv01
+[2026-02-02 10:04:37] Local login successful for user: spv01
+[2026-02-02 10:04:37] Redirecting spv01 to index.php
+[2026-02-02 10:36:31] Attempted login for user: maker01
+[2026-02-02 10:36:31] Local login successful for user: maker01
+[2026-02-02 10:36:31] Redirecting maker01 to index.php
+[2026-02-02 16:28:37] Attempted login for user: maker01
+[2026-02-02 16:28:37] Local login successful for user: maker01
+[2026-02-02 16:28:37] Redirecting maker01 to index.php
+[2026-02-02 16:28:44] Attempted login for user: spv01
+[2026-02-02 16:28:44] Local login successful for user: spv01
+[2026-02-02 16:28:44] Redirecting spv01 to index.php
+[2026-02-02 16:29:45] Attempted login for user: maker01
+[2026-02-02 16:29:45] Local login successful for user: maker01
+[2026-02-02 16:29:45] Redirecting maker01 to index.php
+[2026-02-02 16:31:24] Attempted login for user: spv01
+[2026-02-02 16:31:24] Local login successful for user: spv01
+[2026-02-02 16:31:24] Redirecting spv01 to index.php
+[2026-02-02 16:31:48] Attempted login for user: pic01
+[2026-02-02 16:31:48] Local login successful for user: pic01
+[2026-02-02 16:31:48] Redirecting pic01 to index.php
+[2026-02-02 16:32:22] Attempted login for user: proc01
+[2026-02-02 16:32:22] Local login successful for user: proc01
+[2026-02-02 16:32:22] Redirecting proc01 to index.php
+[2026-02-03 02:58:30] Attempted login for user: maker01
+[2026-02-03 02:58:30] Local login successful for user: maker01
+[2026-02-03 02:58:30] Redirecting maker01 to index.php
+[2026-02-03 04:04:49] Attempted login for user: spv01
+[2026-02-03 04:04:49] Local login successful for user: spv01
+[2026-02-03 04:04:49] Redirecting spv01 to index.php
+[2026-02-03 04:05:36] Attempted login for user: maker01
+[2026-02-03 04:05:36] Local login successful for user: maker01
+[2026-02-03 04:05:36] Redirecting maker01 to index.php
+[2026-02-03 04:20:36] Attempted login for user: admin
+[2026-02-03 04:20:36] Local login successful for user: admin
+[2026-02-03 04:20:36] Redirecting admin to index.php
+[2026-02-03 04:42:15] Attempted login for user: admin_script
+[2026-02-03 04:42:15] Local login successful for user: admin_script
+[2026-02-03 04:42:15] Redirecting admin_script to index.php
+[2026-02-03 05:23:40] Attempted login for user: spv01
+[2026-02-03 05:23:40] Local login successful for user: spv01
+[2026-02-03 05:23:40] Redirecting spv01 to index.php
+[2026-02-03 05:28:58] Attempted login for user: admin_script
+[2026-02-03 05:28:58] Local login successful for user: admin_script
+[2026-02-03 05:28:58] Redirecting admin_script to index.php
+[2026-02-03 05:29:33] Attempted login for user: maker01
+[2026-02-03 05:29:33] Local login successful for user: maker01
+[2026-02-03 05:29:33] Redirecting maker01 to index.php
+[2026-02-03 07:24:28] Attempted login for user: spv01
+[2026-02-03 07:24:28] Local login successful for user: spv01
+[2026-02-03 07:24:28] Redirecting spv01 to index.php
+[2026-02-03 07:29:58] Attempted login for user: admin_script
+[2026-02-03 07:29:58] Local login successful for user: admin_script
+[2026-02-03 07:29:58] Redirecting admin_script to index.php
+[2026-02-03 07:38:13] Attempted login for user: maker01
+[2026-02-03 07:38:13] Local login successful for user: maker01
+[2026-02-03 07:38:13] Redirecting maker01 to index.php
+[2026-02-03 07:45:21] Attempted login for user: spv01
+[2026-02-03 07:45:21] Local login successful for user: spv01
+[2026-02-03 07:45:21] Redirecting spv01 to index.php
+[2026-02-03 07:49:09] Attempted login for user: maker01
+[2026-02-03 07:49:09] Local login successful for user: maker01
+[2026-02-03 07:49:09] Redirecting maker01 to index.php
+[2026-02-03 07:59:26] Attempted login for user: pic01
+[2026-02-03 07:59:26] Local login successful for user: pic01
+[2026-02-03 07:59:26] Redirecting pic01 to index.php
+[2026-02-03 07:59:33] Attempted login for user: spv01
+[2026-02-03 07:59:33] Local login successful for user: spv01
+[2026-02-03 07:59:33] Redirecting spv01 to index.php
+[2026-02-03 08:04:07] Attempted login for user: pic01
+[2026-02-03 08:04:07] Local login successful for user: pic01
+[2026-02-03 08:04:07] Redirecting pic01 to index.php
+[2026-02-03 08:04:24] Attempted login for user: proc01
+[2026-02-03 08:04:24] Local login successful for user: proc01
+[2026-02-03 08:04:24] Redirecting proc01 to index.php
+[2026-02-03 09:16:03] Attempted login for user: admin_script
+[2026-02-03 09:16:03] Local login successful for user: admin_script
+[2026-02-03 09:16:03] Redirecting admin_script to index.php
+[2026-02-03 09:19:19] Attempted login for user: maker01
+[2026-02-03 09:19:19] Local login successful for user: maker01
+[2026-02-03 09:19:19] Redirecting maker01 to index.php
+[2026-02-03 09:38:40] Attempted login for user: maker01
+[2026-02-03 09:38:40] Local login successful for user: maker01
+[2026-02-03 09:38:40] Redirecting maker01 to index.php
+[2026-02-03 09:41:18] Attempted login for user: maker01
+[2026-02-03 09:41:18] Local login successful for user: maker01
+[2026-02-03 09:41:18] Redirecting maker01 to index.php
+[2026-02-03 10:03:14] Attempted login for user: maker01
+[2026-02-03 10:03:14] Local login successful for user: maker01
+[2026-02-03 10:03:14] Redirecting maker01 to index.php
+[2026-02-04 02:36:30] Attempted login for user: maker
+[2026-02-04 02:36:30] User not found or inactive: maker
+[2026-02-04 02:36:34] Attempted login for user: maker
+[2026-02-04 02:36:34] User not found or inactive: maker
+[2026-02-04 02:36:40] Attempted login for user: maker01
+[2026-02-04 02:36:40] Local login successful for user: maker01
+[2026-02-04 02:36:40] Redirecting maker01 to index.php
+[2026-02-04 04:39:01] Attempted login for user: proc01
+[2026-02-04 04:39:01] Local login successful for user: proc01
+[2026-02-04 04:39:01] Redirecting proc01 to index.php
+[2026-02-04 04:40:51] Attempted login for user: maker01
+[2026-02-04 04:40:51] Local login successful for user: maker01
+[2026-02-04 04:40:51] Redirecting maker01 to index.php
+[2026-02-04 05:11:48] Attempted login for user: spv01
+[2026-02-04 05:11:48] Local login successful for user: spv01
+[2026-02-04 05:11:48] Redirecting spv01 to index.php
+[2026-02-04 05:22:57] Attempted login for user: maker01
+[2026-02-04 05:22:57] Local login successful for user: maker01
+[2026-02-04 05:22:57] Redirecting maker01 to index.php
+[2026-02-04 06:12:36] Attempted login for user: spv01
+[2026-02-04 06:12:36] Local login successful for user: spv01
+[2026-02-04 06:12:36] Redirecting spv01 to index.php
+[2026-02-04 09:47:48] Attempted login for user: maker01
+[2026-02-04 09:47:48] Local login successful for user: maker01
+[2026-02-04 09:47:48] Redirecting maker01 to index.php
+[2026-02-04 10:25:12] Attempted login for user: maker01
+[2026-02-04 10:25:12] Local login successful for user: maker01
+[2026-02-04 10:25:12] Redirecting maker01 to index.php
+[2026-02-04 10:28:47] Attempted login for user: admin_script
+[2026-02-04 10:28:47] Local login successful for user: admin_script
+[2026-02-04 10:28:47] Redirecting admin_script to index.php
+[2026-02-04 10:47:12] Attempted login for user: maker01
+[2026-02-04 10:47:12] Local login successful for user: maker01
+[2026-02-04 10:47:12] Redirecting maker01 to index.php
+[2026-02-04 11:10:15] Attempted login for user: admin_script
+[2026-02-04 11:10:15] Local login successful for user: admin_script
+[2026-02-04 11:10:15] Redirecting admin_script to index.php
+[2026-02-04 11:53:23] Attempted login for user: spv01
+[2026-02-04 11:53:23] Local login successful for user: spv01
+[2026-02-04 11:53:23] Redirecting spv01 to index.php
+[2026-02-04 11:53:35] Attempted login for user: pic01
+[2026-02-04 11:53:35] Local login successful for user: pic01
+[2026-02-04 11:53:35] Redirecting pic01 to index.php
+[2026-02-04 11:59:54] Attempted login for user: spv01
+[2026-02-04 11:59:54] Local login successful for user: spv01
+[2026-02-04 11:59:54] Redirecting spv01 to index.php
+[2026-02-04 13:30:42] Attempted login for user: maker01
+[2026-02-04 13:30:42] Local login successful for user: maker01
+[2026-02-04 13:30:42] Redirecting maker01 to index.php
+[2026-02-04 15:26:11] Attempted login for user: proc01
+[2026-02-04 15:26:11] Local login successful for user: proc01
+[2026-02-04 15:26:11] Redirecting proc01 to index.php
+[2026-02-05 02:30:35] Attempted login for user: maker01
+[2026-02-05 02:30:35] Local login successful for user: maker01
+[2026-02-05 02:30:35] Redirecting maker01 to index.php
+[2026-02-05 04:27:37] Attempted login for user: spv01
+[2026-02-05 04:27:37] Local login successful for user: spv01
+[2026-02-05 04:27:37] Redirecting spv01 to index.php
+[2026-02-05 04:34:55] Attempted login for user: maker01
+[2026-02-05 04:34:55] Local login successful for user: maker01
+[2026-02-05 04:34:55] Redirecting maker01 to index.php
+[2026-02-05 04:36:12] Attempted login for user: spvo1
+[2026-02-05 04:36:12] User not found or inactive: spvo1
+[2026-02-05 04:36:16] Attempted login for user: spv01
+[2026-02-05 04:36:16] Local login successful for user: spv01
+[2026-02-05 04:36:16] Redirecting spv01 to index.php
+[2026-02-05 04:36:55] Attempted login for user: pic01
+[2026-02-05 04:36:55] Local login successful for user: pic01
+[2026-02-05 04:36:55] Redirecting pic01 to index.php
+[2026-02-05 04:37:15] Attempted login for user: proc01
+[2026-02-05 04:37:15] Local login successful for user: proc01
+[2026-02-05 04:37:15] Redirecting proc01 to index.php
+[2026-02-05 04:37:53] Attempted login for user: pic01
+[2026-02-05 04:37:53] Local login successful for user: pic01
+[2026-02-05 04:37:53] Redirecting pic01 to index.php
+[2026-02-05 04:38:06] Attempted login for user: proc01
+[2026-02-05 04:38:06] Local login successful for user: proc01
+[2026-02-05 04:38:06] Redirecting proc01 to index.php
+[2026-02-05 09:30:40] Attempted login for user: maker01
+[2026-02-05 09:30:40] Local login successful for user: maker01
+[2026-02-05 09:30:40] Redirecting maker01 to index.php
+[2026-02-05 09:46:31] Attempted login for user: admin_script
+[2026-02-05 09:46:31] Local login successful for user: admin_script
+[2026-02-05 09:46:31] Redirecting admin_script to index.php
+[2026-02-05 09:47:32] Attempted login for user: HS1234X
+[2026-02-05 09:47:32] Local login successful for user: HS1234X
+[2026-02-05 09:47:32] Redirecting HS1234X to index.php
+[2026-02-05 09:47:39] Attempted login for user: maker01
+[2026-02-05 09:47:39] Local login successful for user: maker01
+[2026-02-05 09:47:39] Redirecting maker01 to index.php
+[2026-02-05 11:12:39] Attempted login for user: spv01
+[2026-02-05 11:12:39] Local login successful for user: spv01
+[2026-02-05 11:12:39] Redirecting spv01 to index.php
+[2026-02-05 13:27:44] Attempted login for user: maker01
+[2026-02-05 13:27:44] Local login successful for user: maker01
+[2026-02-05 13:27:44] Redirecting maker01 to index.php
+[2026-02-05 13:37:19] Attempted login for user: proc02
+[2026-02-05 13:37:20] LDAP Bind Failed for proc02: LDAP Error: Local error
+[2026-02-05 13:37:25] Attempted login for user: proc01
+[2026-02-05 13:37:25] Local login successful for user: proc01
+[2026-02-05 13:37:25] Redirecting proc01 to index.php
+[2026-02-05 13:38:29] Attempted login for user: spv01
+[2026-02-05 13:38:29] Local login successful for user: spv01
+[2026-02-05 13:38:29] Redirecting spv01 to index.php
+[2026-02-05 13:38:38] Attempted login for user: pic01
+[2026-02-05 13:38:38] Local login successful for user: pic01
+[2026-02-05 13:38:38] Redirecting pic01 to index.php
+[2026-02-05 13:58:30] Attempted login for user: maker01
+[2026-02-05 13:58:30] Local login successful for user: maker01
+[2026-02-05 13:58:30] Redirecting maker01 to index.php
+[2026-02-05 13:59:54] Attempted login for user: spv01
+[2026-02-05 13:59:54] Local login successful for user: spv01
+[2026-02-05 13:59:54] Redirecting spv01 to index.php
+[2026-02-05 14:02:34] Attempted login for user: pic01
+[2026-02-05 14:02:34] Local login successful for user: pic01
+[2026-02-05 14:02:34] Redirecting pic01 to index.php
+[2026-02-05 14:07:40] Attempted login for user: proc01
+[2026-02-05 14:07:40] Local login failed for user: proc01
+[2026-02-05 14:07:44] Attempted login for user: proc01
+[2026-02-05 14:07:44] Local login successful for user: proc01
+[2026-02-05 14:07:44] Redirecting proc01 to index.php
+[2026-02-06 02:17:49] Attempted login for user: maker01
+[2026-02-06 02:17:49] Local login successful for user: maker01
+[2026-02-06 02:17:49] Redirecting maker01 to index.php
+[2026-02-06 02:26:11] Attempted login for user: spv01
+[2026-02-06 02:26:11] Local login successful for user: spv01
+[2026-02-06 02:26:11] Redirecting spv01 to index.php
+[2026-02-06 02:26:20] Attempted login for user: HS1234X
+[2026-02-06 02:26:20] Local login successful for user: HS1234X
+[2026-02-06 02:26:20] Redirecting HS1234X to index.php
+[2026-02-06 02:31:27] Attempted login for user: admin_script
+[2026-02-06 02:31:27] Local login successful for user: admin_script
+[2026-02-06 02:31:27] Redirecting admin_script to index.php
+[2026-02-06 02:31:49] Attempted login for user: HS1234X
+[2026-02-06 02:31:49] Local login successful for user: HS1234X
+[2026-02-06 02:31:49] Redirecting HS1234X to index.php
+[2026-02-06 02:32:07] Attempted login for user: admin_script
+[2026-02-06 02:32:07] Local login successful for user: admin_script
+[2026-02-06 02:32:07] Redirecting admin_script to index.php
+[2026-02-06 02:32:58] Attempted login for user: pic01
+[2026-02-06 02:32:58] Local login successful for user: pic01
+[2026-02-06 02:32:58] Redirecting pic01 to index.php
+[2026-02-06 02:35:25] Attempted login for user: proc01
+[2026-02-06 02:35:25] Local login successful for user: proc01
+[2026-02-06 02:35:25] Redirecting proc01 to index.php
+[2026-02-06 02:55:44] Attempted login for user: pic01
+[2026-02-06 02:55:44] Local login successful for user: pic01
+[2026-02-06 02:55:44] Redirecting pic01 to index.php
+[2026-02-06 03:06:16] Attempted login for user: maker01
+[2026-02-06 03:06:16] Local login successful for user: maker01
+[2026-02-06 03:06:16] Redirecting maker01 to index.php
+[2026-02-06 04:35:15] Attempted login for user: pic01
+[2026-02-06 04:35:15] Local login successful for user: pic01
+[2026-02-06 04:35:15] Redirecting pic01 to index.php
+[2026-02-06 04:38:23] Attempted login for user: spv01
+[2026-02-06 04:38:23] Local login successful for user: spv01
+[2026-02-06 04:38:23] Redirecting spv01 to index.php
+[2026-02-06 04:38:35] Attempted login for user: maker01
+[2026-02-06 04:38:35] Local login successful for user: maker01
+[2026-02-06 04:38:35] Redirecting maker01 to index.php
+[2026-02-06 04:39:36] Attempted login for user: HS1234X
+[2026-02-06 04:39:36] Local login successful for user: HS1234X
+[2026-02-06 04:39:36] Redirecting HS1234X to index.php
+[2026-02-06 04:41:12] Attempted login for user: pic01
+[2026-02-06 04:41:12] Local login successful for user: pic01
+[2026-02-06 04:41:12] Redirecting pic01 to index.php
+[2026-02-06 05:24:11] Attempted login for user: maker01
+[2026-02-06 05:24:11] Local login successful for user: maker01
+[2026-02-06 05:24:11] Redirecting maker01 to index.php
+[2026-02-06 05:25:47] Attempted login for user: spv01
+[2026-02-06 05:25:47] Local login successful for user: spv01
+[2026-02-06 05:25:47] Redirecting spv01 to index.php
+[2026-02-06 05:25:54] Attempted login for user: HS1234X
+[2026-02-06 05:25:54] Local login successful for user: HS1234X
+[2026-02-06 05:25:54] Redirecting HS1234X to index.php
+[2026-02-06 05:28:10] Attempted login for user: pic01
+[2026-02-06 05:28:10] Local login successful for user: pic01
+[2026-02-06 05:28:10] Redirecting pic01 to index.php
+[2026-02-06 07:51:08] Attempted login for user: maker01
+[2026-02-06 07:51:08] Local login successful for user: maker01
+[2026-02-06 07:51:08] Redirecting maker01 to index.php
+[2026-02-06 07:53:28] Attempted login for user: HS1234X
+[2026-02-06 07:53:28] Local login successful for user: HS1234X
+[2026-02-06 07:53:28] Redirecting HS1234X to index.php
+[2026-02-06 08:40:59] Attempted login for user: pic01
+[2026-02-06 08:40:59] Local login successful for user: pic01
+[2026-02-06 08:40:59] Redirecting pic01 to index.php
+[2026-02-06 09:24:20] Attempted login for user: proc01
+[2026-02-06 09:24:20] Local login successful for user: proc01
+[2026-02-06 09:24:20] Redirecting proc01 to index.php
+[2026-02-06 09:48:33] Attempted login for user: maker01
+[2026-02-06 09:48:33] Local login successful for user: maker01
+[2026-02-06 09:48:33] Redirecting maker01 to index.php
+[2026-02-06 09:54:18] Attempted login for user: pic01
+[2026-02-06 09:54:18] Local login successful for user: pic01
+[2026-02-06 09:54:18] Redirecting pic01 to index.php
+[2026-02-06 10:33:13] Attempted login for user: HS1234X
+[2026-02-06 10:33:13] Local login successful for user: HS1234X
+[2026-02-06 10:33:13] Redirecting HS1234X to index.php
+[2026-02-06 10:33:54] Attempted login for user: pic01
+[2026-02-06 10:33:54] Local login successful for user: pic01
+[2026-02-06 10:33:54] Redirecting pic01 to index.php
+[2026-02-06 12:18:43] Attempted login for user: HS1234X
+[2026-02-06 12:18:43] Local login successful for user: HS1234X
+[2026-02-06 12:18:43] Redirecting HS1234X to index.php
+[2026-02-07 03:54:26] Attempted login for user: proc01
+[2026-02-07 03:54:26] Local login successful for user: proc01
+[2026-02-07 03:54:26] Redirecting proc01 to index.php
+[2026-02-07 03:55:05] Attempted login for user: pic01
+[2026-02-07 03:55:05] Local login successful for user: pic01
+[2026-02-07 03:55:05] Redirecting pic01 to index.php
+[2026-02-07 07:05:18] Attempted login for user: maker01
+[2026-02-07 07:05:18] Local login successful for user: maker01
+[2026-02-07 07:05:18] Redirecting maker01 to index.php
+[2026-02-07 07:07:12] Attempted login for user: spv01
+[2026-02-07 07:07:12] Local login successful for user: spv01
+[2026-02-07 07:07:12] Redirecting spv01 to index.php
+[2026-02-07 07:07:19] Attempted login for user: HS1234X
+[2026-02-07 07:07:19] Local login successful for user: HS1234X
+[2026-02-07 07:07:19] Redirecting HS1234X to index.php
+[2026-02-07 07:16:00] Attempted login for user: pic01
+[2026-02-07 07:16:00] Local login successful for user: pic01
+[2026-02-07 07:16:00] Redirecting pic01 to index.php
+[2026-02-07 09:03:28] Attempted login for user: spv01
+[2026-02-07 09:03:28] Local login successful for user: spv01
+[2026-02-07 09:03:28] Redirecting spv01 to index.php
+[2026-02-07 09:04:06] Attempted login for user: HS1234X
+[2026-02-07 09:04:06] Local login successful for user: HS1234X
+[2026-02-07 09:04:06] Redirecting HS1234X to index.php
+[2026-02-07 18:21:23] Attempted login for user: proc01
+[2026-02-07 18:21:23] Local login successful for user: proc01
+[2026-02-07 18:21:23] Redirecting proc01 to index.php
+[2026-02-07 18:32:45] Attempted login for user: HS1234X
+[2026-02-07 18:32:45] Local login successful for user: HS1234X
+[2026-02-07 18:32:45] Redirecting HS1234X to index.php
+[2026-02-07 18:33:54] Attempted login for user: pic01
+[2026-02-07 18:33:54] Local login successful for user: pic01
+[2026-02-07 18:33:54] Redirecting pic01 to index.php
+[2026-02-07 18:46:01] Attempted login for user: proc01
+[2026-02-07 18:46:01] Local login successful for user: proc01
+[2026-02-07 18:46:01] Redirecting proc01 to index.php
+[2026-02-07 18:47:01] Attempted login for user: proc02
+[2026-02-07 18:47:01] LDAP Bind Failed for proc02: LDAP Error: Local error
+[2026-02-07 18:47:06] Attempted login for user: proc01
+[2026-02-07 18:47:06] Local login successful for user: proc01
+[2026-02-07 18:47:06] Redirecting proc01 to index.php
+[2026-02-08 07:45:27] Attempted login for user: maker01
+[2026-02-08 07:45:27] Local login successful for user: maker01
+[2026-02-08 07:45:27] Redirecting maker01 to index.php
+[2026-02-08 08:09:26] Attempted login for user: proc01
+[2026-02-08 08:09:26] Local login successful for user: proc01
+[2026-02-08 08:09:26] Redirecting proc01 to index.php
+[2026-02-08 08:10:50] Attempted login for user: maker01
+[2026-02-08 08:10:50] Local login successful for user: maker01
+[2026-02-08 08:10:50] Redirecting maker01 to index.php
+[2026-02-08 09:44:39] Attempted login for user: HS1234X
+[2026-02-08 09:44:39] Local login successful for user: HS1234X
+[2026-02-08 09:44:39] Redirecting HS1234X to index.php
+[2026-02-08 09:45:04] Attempted login for user: pic01
+[2026-02-08 09:45:04] Local login successful for user: pic01
+[2026-02-08 09:45:04] Redirecting pic01 to index.php
+[2026-02-08 09:45:40] Attempted login for user: proc01
+[2026-02-08 09:45:40] Local login successful for user: proc01
+[2026-02-08 09:45:40] Redirecting proc01 to index.php
+[2026-02-08 09:46:32] Attempted login for user: maker01
+[2026-02-08 09:46:32] Local login successful for user: maker01
+[2026-02-08 09:46:32] Redirecting maker01 to index.php
+[2026-02-08 14:42:25] Attempted login for user: spv01
+[2026-02-08 14:42:25] Local login successful for user: spv01
+[2026-02-08 14:42:25] Redirecting spv01 to index.php
+[2026-02-09 04:32:07] Attempted login for user: maker01
+[2026-02-09 04:32:08] Local login successful for user: maker01
+[2026-02-09 04:32:08] Redirecting maker01 to index.php
+[2026-02-09 06:02:03] Attempted login for user: HS1234X
+[2026-02-09 06:02:03] Local login successful for user: HS1234X
+[2026-02-09 06:02:03] Redirecting HS1234X to index.php
+[2026-02-09 07:02:28] Attempted login for user: pic01
+[2026-02-09 07:02:28] Local login successful for user: pic01
+[2026-02-09 07:02:28] Redirecting pic01 to index.php
+[2026-02-09 07:02:41] Attempted login for user: spv01
+[2026-02-09 07:02:41] Local login successful for user: spv01
+[2026-02-09 07:02:41] Redirecting spv01 to index.php
+[2026-02-09 07:03:07] Attempted login for user: HS1234X
+[2026-02-09 07:03:07] Local login successful for user: HS1234X
+[2026-02-09 07:03:07] Redirecting HS1234X to index.php
+[2026-02-09 07:13:29] Attempted login for user: pic01
+[2026-02-09 07:13:29] Local login successful for user: pic01
+[2026-02-09 07:13:29] Redirecting pic01 to index.php
+[2026-02-09 08:30:12] Attempted login for user: proc01
+[2026-02-09 08:30:12] Local login successful for user: proc01
+[2026-02-09 08:30:12] Redirecting proc01 to index.php
+[2026-02-09 12:27:36] Attempted login for user: HS1234X
+[2026-02-09 12:27:36] Local login successful for user: HS1234X
+[2026-02-09 12:27:36] Redirecting HS1234X to index.php
+[2026-02-09 13:57:23] Attempted login for user: pic01
+[2026-02-09 13:57:23] Local login successful for user: pic01
+[2026-02-09 13:57:23] Redirecting pic01 to index.php
+[2026-02-09 14:28:32] Attempted login for user: proc01
+[2026-02-09 14:28:32] Local login successful for user: proc01
+[2026-02-09 14:28:32] Redirecting proc01 to index.php
+[2026-02-10 02:30:57] Attempted login for user: proc01
+[2026-02-10 02:30:57] Local login successful for user: proc01
+[2026-02-10 02:30:57] Redirecting proc01 to index.php
+[2026-02-10 03:24:53] Attempted login for user: maker01
+[2026-02-10 03:24:53] Local login successful for user: maker01
+[2026-02-10 03:24:53] Redirecting maker01 to index.php
+[2026-02-10 03:26:31] Attempted login for user: HS1234X
+[2026-02-10 03:26:31] Local login successful for user: HS1234X
+[2026-02-10 03:26:31] Redirecting HS1234X to index.php
+[2026-02-10 03:28:36] Attempted login for user: maker01
+[2026-02-10 03:28:36] Local login failed for user: maker01
+[2026-02-10 03:28:40] Attempted login for user: maker01
+[2026-02-10 03:28:40] Local login successful for user: maker01
+[2026-02-10 03:28:40] Redirecting maker01 to index.php
+[2026-02-10 04:11:33] Attempted login for user: spv01
+[2026-02-10 04:11:33] Local login successful for user: spv01
+[2026-02-10 04:11:33] Redirecting spv01 to index.php
+[2026-02-10 04:11:40] Attempted login for user: HS1234X
+[2026-02-10 04:11:40] Local login successful for user: HS1234X
+[2026-02-10 04:11:40] Redirecting HS1234X to index.php
+[2026-02-10 07:45:47] Attempted login for user: proc01
+[2026-02-10 07:45:47] Local login successful for user: proc01
+[2026-02-10 07:45:47] Redirecting proc01 to index.php
+[2026-02-11 03:23:34] Attempted login for user: admin_script
+[2026-02-11 03:23:34] Local login successful for user: admin_script
+[2026-02-11 03:23:34] Redirecting admin_script to index.php
+[2026-02-11 03:24:44] Attempted login for user: maker01
+[2026-02-11 03:24:44] Local login successful for user: maker01
+[2026-02-11 03:24:44] Redirecting maker01 to index.php
+[2026-02-11 03:51:51] Attempted login for user: spv01
+[2026-02-11 03:51:51] Local login successful for user: spv01
+[2026-02-11 03:51:51] Redirecting spv01 to index.php
+[2026-02-11 03:52:03] Attempted login for user: maker01
+[2026-02-11 03:52:03] Local login successful for user: maker01
+[2026-02-11 03:52:03] Redirecting maker01 to index.php
+[2026-02-11 03:57:26] Attempted login for user: HS1234X
+[2026-02-11 03:57:26] Local login successful for user: HS1234X
+[2026-02-11 03:57:26] Redirecting HS1234X to index.php
+[2026-02-11 07:06:03] Attempted login for user: proc01
+[2026-02-11 07:06:03] Local login successful for user: proc01
+[2026-02-11 07:06:03] Redirecting proc01 to index.php
+[2026-02-11 08:29:22] Attempted login for user: spv01
+[2026-02-11 08:29:22] Local login successful for user: spv01
+[2026-02-11 08:29:22] Redirecting spv01 to index.php
+[2026-02-11 08:29:47] Attempted login for user: maker01
+[2026-02-11 08:29:47] Local login successful for user: maker01
+[2026-02-11 08:29:47] Redirecting maker01 to index.php
+[2026-02-11 08:35:06] Attempted login for user: HS1234X
+[2026-02-11 08:35:06] Local login successful for user: HS1234X
+[2026-02-11 08:35:06] Redirecting HS1234X to index.php
+[2026-02-11 08:36:39] Attempted login for user: pic01
+[2026-02-11 08:36:39] Local login successful for user: pic01
+[2026-02-11 08:36:39] Redirecting pic01 to index.php
+[2026-02-11 08:53:46] Attempted login for user: HS1234X
+[2026-02-11 08:53:46] Local login successful for user: HS1234X
+[2026-02-11 08:53:46] Redirecting HS1234X to index.php
+[2026-02-11 11:10:34] Attempted login for user: proc01
+[2026-02-11 11:10:34] Local login successful for user: proc01
+[2026-02-11 11:10:34] Redirecting proc01 to index.php
+[2026-02-11 13:28:42] Attempted login for user: maker01
+[2026-02-11 13:28:42] Local login successful for user: maker01
+[2026-02-11 13:28:42] Redirecting maker01 to index.php
+[2026-02-11 13:29:35] Attempted login for user: HS1234X
+[2026-02-11 13:29:35] Local login failed for user: HS1234X
+[2026-02-11 13:29:38] Attempted login for user: HS1234X
+[2026-02-11 13:29:38] Local login successful for user: HS1234X
+[2026-02-11 13:29:38] Redirecting HS1234X to index.php
+[2026-02-11 13:40:32] Attempted login for user: pic01
+[2026-02-11 13:40:32] Local login successful for user: pic01
+[2026-02-11 13:40:32] Redirecting pic01 to index.php
+[2026-02-11 13:41:12] Attempted login for user: pic01
+[2026-02-11 13:41:12] Local login successful for user: pic01
+[2026-02-11 13:41:12] Redirecting pic01 to index.php
+[2026-02-11 13:48:37] Attempted login for user: spv01
+[2026-02-11 13:48:37] Local login successful for user: spv01
+[2026-02-11 13:48:37] Redirecting spv01 to index.php
+[2026-02-11 13:48:47] Attempted login for user: HS1234X
+[2026-02-11 13:48:47] Local login successful for user: HS1234X
+[2026-02-11 13:48:47] Redirecting HS1234X to index.php
+[2026-02-11 14:02:48] Attempted login for user: pic01
+[2026-02-11 14:02:48] Local login successful for user: pic01
+[2026-02-11 14:02:48] Redirecting pic01 to index.php
+[2026-02-11 14:21:53] Attempted login for user: maker01
+[2026-02-11 14:21:53] Local login successful for user: maker01
+[2026-02-11 14:21:53] Redirecting maker01 to index.php
+[2026-02-11 14:22:39] Attempted login for user: HS1234X
+[2026-02-11 14:22:39] Local login successful for user: HS1234X
+[2026-02-11 14:22:39] Redirecting HS1234X to index.php
+[2026-02-11 14:33:40] Attempted login for user: maker01
+[2026-02-11 14:33:40] Local login successful for user: maker01
+[2026-02-11 14:33:40] Redirecting maker01 to index.php
+[2026-02-11 14:34:16] Attempted login for user: HS1234X
+[2026-02-11 14:34:16] Local login successful for user: HS1234X
+[2026-02-11 14:34:16] Redirecting HS1234X to index.php
+[2026-02-11 14:41:21] Attempted login for user: maker01
+[2026-02-11 14:41:21] Local login successful for user: maker01
+[2026-02-11 14:41:21] Redirecting maker01 to index.php
+[2026-02-11 14:41:57] Attempted login for user: HS1234X
+[2026-02-11 14:41:57] Local login successful for user: HS1234X
+[2026-02-11 14:41:57] Redirecting HS1234X to index.php
+[2026-02-11 14:43:20] Attempted login for user: proc01
+[2026-02-11 14:43:20] Local login successful for user: proc01
+[2026-02-11 14:43:20] Redirecting proc01 to index.php
+[2026-02-11 14:55:36] Attempted login for user: maker01
+[2026-02-11 14:55:36] Local login successful for user: maker01
+[2026-02-11 14:55:36] Redirecting maker01 to index.php
+[2026-02-11 14:56:45] Attempted login for user: HS1234X
+[2026-02-11 14:56:45] Local login successful for user: HS1234X
+[2026-02-11 14:56:45] Redirecting HS1234X to index.php
+[2026-02-11 14:58:50] Attempted login for user: maker01
+[2026-02-11 14:58:50] Local login successful for user: maker01
+[2026-02-11 14:58:50] Redirecting maker01 to index.php
+[2026-02-11 15:00:38] Attempted login for user: pic01
+[2026-02-11 15:00:38] Local login successful for user: pic01
+[2026-02-11 15:00:38] Redirecting pic01 to index.php
+[2026-02-11 15:02:20] Attempted login for user: proc01
+[2026-02-11 15:02:20] Local login successful for user: proc01
+[2026-02-11 15:02:20] Redirecting proc01 to index.php
+[2026-02-11 16:03:54] Attempted login for user: maker01
+[2026-02-11 16:03:54] Local login successful for user: maker01
+[2026-02-11 16:03:54] Redirecting maker01 to index.php
+[2026-02-11 17:22:02] Attempted login for user: pic01
+[2026-02-11 17:22:02] Local login successful for user: pic01
+[2026-02-11 17:22:02] Redirecting pic01 to index.php
+[2026-02-11 17:40:49] Attempted login for user: procedure
+[2026-02-11 17:40:49] User not found or inactive: procedure
+[2026-02-11 17:40:53] Attempted login for user: proc01
+[2026-02-11 17:40:53] Local login successful for user: proc01
+[2026-02-11 17:40:53] Redirecting proc01 to index.php
+[2026-02-12 02:28:28] Attempted login for user: maker01
+[2026-02-12 02:28:29] Local login successful for user: maker01
+[2026-02-12 02:28:29] Redirecting maker01 to index.php
+[2026-02-12 02:29:24] Attempted login for user: HS1234X
+[2026-02-12 02:29:24] Local login successful for user: HS1234X
+[2026-02-12 02:29:24] Redirecting HS1234X to index.php
+[2026-02-12 02:39:45] Attempted login for user: maker01
+[2026-02-12 02:39:45] Local login successful for user: maker01
+[2026-02-12 02:39:45] Redirecting maker01 to index.php
+[2026-02-12 04:36:38] Attempted login for user: spv01
+[2026-02-12 04:36:38] Local login successful for user: spv01
+[2026-02-12 04:36:38] Redirecting spv01 to index.php
+[2026-02-12 04:42:59] Attempted login for user: HS1234X
+[2026-02-12 04:42:59] Local login successful for user: HS1234X
+[2026-02-12 04:42:59] Redirecting HS1234X to index.php
+[2026-02-12 07:48:04] Attempted login for user: proc01
+[2026-02-12 07:48:04] Local login successful for user: proc01
+[2026-02-12 07:48:04] Redirecting proc01 to index.php
+[2026-02-12 07:53:38] Attempted login for user: pic01
+[2026-02-12 07:53:38] Local login successful for user: pic01
+[2026-02-12 07:53:38] Redirecting pic01 to index.php
+[2026-02-12 07:54:24] Attempted login for user: proc01
+[2026-02-12 07:54:24] Local login successful for user: proc01
+[2026-02-12 07:54:24] Redirecting proc01 to index.php
+[2026-02-12 08:51:34] Attempted login for user: maker01
+[2026-02-12 08:51:34] Local login successful for user: maker01
+[2026-02-12 08:51:34] Redirecting maker01 to index.php
+[2026-02-12 09:25:04] Attempted login for user: spv01
+[2026-02-12 09:25:04] Local login successful for user: spv01
+[2026-02-12 09:25:04] Redirecting spv01 to index.php
+[2026-02-12 09:25:10] Attempted login for user: HS1234X
+[2026-02-12 09:25:10] Local login successful for user: HS1234X
+[2026-02-12 09:25:10] Redirecting HS1234X to index.php
+[2026-02-12 09:32:50] Attempted login for user: maker01
+[2026-02-12 09:32:50] Local login successful for user: maker01
+[2026-02-12 09:32:50] Redirecting maker01 to index.php
+[2026-02-12 09:36:53] Attempted login for user: proc01
+[2026-02-12 09:36:53] Local login successful for user: proc01
+[2026-02-12 09:36:53] Redirecting proc01 to index.php
+[2026-02-13 03:06:47] Attempted login for user: maker01
+[2026-02-13 03:06:47] Local login successful for user: maker01
+[2026-02-13 03:06:47] Redirecting maker01 to index.php
+[2026-02-13 07:40:15] Attempted login for user: HS1234X
+[2026-02-13 07:40:15] Local login successful for user: HS1234X
+[2026-02-13 07:40:15] Redirecting HS1234X to index.php
+[2026-02-13 07:58:04] Attempted login for user: maker01
+[2026-02-13 07:58:04] Local login successful for user: maker01
+[2026-02-13 07:58:04] Redirecting maker01 to index.php
+[2026-02-13 07:59:18] Attempted login for user: HS1234X
+[2026-02-13 07:59:18] Local login successful for user: HS1234X
+[2026-02-13 07:59:18] Redirecting HS1234X to index.php
+[2026-02-14 04:44:14] Attempted login for user: HS1234X
+[2026-02-14 04:44:14] Local login successful for user: HS1234X
+[2026-02-14 04:44:14] Redirecting HS1234X to index.php
+[2026-02-14 04:45:23] Attempted login for user: pic01
+[2026-02-14 04:45:23] Local login successful for user: pic01
+[2026-02-14 04:45:23] Redirecting pic01 to index.php
+[2026-02-14 04:46:49] Attempted login for user: proc01
+[2026-02-14 04:46:49] Local login successful for user: proc01
+[2026-02-14 04:46:49] Redirecting proc01 to index.php
+[2026-02-14 05:01:26] Attempted login for user: maker01
+[2026-02-14 05:01:26] Local login successful for user: maker01
+[2026-02-14 05:01:26] Redirecting maker01 to index.php
+[2026-02-14 05:46:59] Attempted login for user: pic01
+[2026-02-14 05:46:59] Local login successful for user: pic01
+[2026-02-14 05:46:59] Redirecting pic01 to index.php
+[2026-02-14 21:39:33] Attempted login for user: maker01
+[2026-02-14 21:39:33] Local login successful for user: maker01
+[2026-02-14 21:39:33] Redirecting maker01 to index.php
+[2026-02-14 22:32:08] Attempted login for user: HS1234X
+[2026-02-14 22:32:08] Local login successful for user: HS1234X
+[2026-02-14 22:32:08] Redirecting HS1234X to index.php
+[2026-02-15 18:50:20] Attempted login for user: maker01
+[2026-02-15 18:50:20] Local login successful for user: maker01
+[2026-02-15 18:50:20] Redirecting maker01 to index.php
+[2026-02-15 21:20:39] Attempted login for user: HS1234X
+[2026-02-15 21:20:39] Local login successful for user: HS1234X
+[2026-02-15 21:20:39] Redirecting HS1234X to index.php
+[2026-02-15 21:22:15] Attempted login for user: pic01
+[2026-02-15 21:22:15] Local login successful for user: pic01
+[2026-02-15 21:22:15] Redirecting pic01 to index.php
+[2026-02-16 23:37:07] Attempted login for user: maker01
+[2026-02-16 23:37:07] Local login successful for user: maker01
+[2026-02-16 23:37:07] Redirecting maker01 to index.php
+[2026-02-17 05:42:18] Attempted login for user: maker01
+[2026-02-17 05:42:18] Local login successful for user: maker01
+[2026-02-17 05:42:18] Redirecting maker01 to index.php
+[2026-02-17 05:44:27] Attempted login for user: HS1234X
+[2026-02-17 05:44:27] Local login successful for user: HS1234X
+[2026-02-17 05:44:27] Redirecting HS1234X to index.php
+[2026-02-17 06:32:52] Attempted login for user: pic01
+[2026-02-17 06:32:52] Local login successful for user: pic01
+[2026-02-17 06:32:52] Redirecting pic01 to index.php
+[2026-02-17 06:33:17] Attempted login for user: HS1234X
+[2026-02-17 06:33:17] Local login successful for user: HS1234X
+[2026-02-17 06:33:17] Redirecting HS1234X to index.php
+[2026-02-17 06:34:06] Attempted login for user: maker01
+[2026-02-17 06:34:06] Local login successful for user: maker01
+[2026-02-17 06:34:06] Redirecting maker01 to index.php
+[2026-02-18 08:37:42] Attempted login for user: maker01
+[2026-02-18 08:37:42] Local login successful for user: maker01
+[2026-02-18 08:37:42] Redirecting maker01 to index.php
+[2026-02-18 09:14:03] Attempted login for user: admin_script
+[2026-02-18 09:14:03] Local login successful for user: admin_script
+[2026-02-18 09:14:03] Redirecting admin_script to index.php
+[2026-02-18 09:14:57] Attempted login for user: maker01
+[2026-02-18 09:14:57] Local login successful for user: maker01
+[2026-02-18 09:14:57] Redirecting maker01 to index.php
+[2026-02-18 09:25:07] Attempted login for user: MK01234X
+[2026-02-18 09:25:07] Local login successful for user: MK01234X
+[2026-02-18 09:25:07] Redirecting MK01234X to index.php
+[2026-02-18 09:26:56] Attempted login for user: maker01
+[2026-02-18 09:26:56] Local login successful for user: maker01
+[2026-02-18 09:26:56] Redirecting maker01 to index.php
+[2026-02-18 10:14:16] Attempted login for user: HS1234X
+[2026-02-18 10:14:16] Local login successful for user: HS1234X
+[2026-02-18 10:14:16] Redirecting HS1234X to index.php
+[2026-02-18 10:15:59] Attempted login for user: maker01
+[2026-02-18 10:15:59] Local login successful for user: maker01
+[2026-02-18 10:15:59] Redirecting maker01 to index.php
+[2026-02-18 10:58:32] Attempted login for user: HS1234X
+[2026-02-18 10:58:32] Local login successful for user: HS1234X
+[2026-02-18 10:58:32] Redirecting HS1234X to index.php
+[2026-02-18 14:57:51] Attempted login for user: pic01
+[2026-02-18 14:57:51] Local login successful for user: pic01
+[2026-02-18 14:57:51] Redirecting pic01 to index.php
+[2026-02-18 15:09:07] Attempted login for user: maker01
+[2026-02-18 15:09:07] Local login successful for user: maker01
+[2026-02-18 15:09:07] Redirecting maker01 to index.php
+[2026-02-19 08:11:57] Attempted login for user: maker01
+[2026-02-19 08:11:57] Local login successful for user: maker01
+[2026-02-19 08:11:57] Redirecting maker01 to index.php
+[2026-02-19 21:33:45] Attempted login for user: maker01
+[2026-02-19 21:33:45] Local login successful for user: maker01
+[2026-02-19 21:33:45] Redirecting maker01 to index.php
+[2026-02-20 08:57:47] Attempted login for user: maker01
+[2026-02-20 08:57:47] Local login successful for user: maker01
+[2026-02-20 08:57:47] Redirecting maker01 to index.php
+[2026-02-20 13:23:42] Attempted login for user: HS1234X
+[2026-02-20 13:23:42] Local login successful for user: HS1234X
+[2026-02-20 13:23:42] Redirecting HS1234X to index.php
+[2026-02-20 13:25:52] Attempted login for user: maker01
+[2026-02-20 13:25:52] Local login failed for user: maker01
+[2026-02-20 13:25:55] Attempted login for user: maker01
+[2026-02-20 13:25:55] Local login successful for user: maker01
+[2026-02-20 13:25:55] Redirecting maker01 to index.php
+[2026-02-20 13:57:01] Attempted login for user: hs01234x
+[2026-02-20 13:57:01] User not found or inactive: hs01234x
+[2026-02-20 13:57:36] Attempted login for user: HS1234X
+[2026-02-20 13:57:36] Local login successful for user: HS1234X
+[2026-02-20 13:57:36] Redirecting HS1234X to index.php
+[2026-02-20 14:18:43] Attempted login for user: maker01
+[2026-02-20 14:18:43] Local login successful for user: maker01
+[2026-02-20 14:18:43] Redirecting maker01 to index.php
+[2026-02-20 14:19:40] Attempted login for user: HS1234X
+[2026-02-20 14:19:40] Local login successful for user: HS1234X
+[2026-02-20 14:19:40] Redirecting HS1234X to index.php
+[2026-02-20 15:15:44] Attempted login for user: pic01
+[2026-02-20 15:15:44] Local login successful for user: pic01
+[2026-02-20 15:15:44] Redirecting pic01 to index.php
+[2026-02-21 15:21:17] Attempted login for user: pic01
+[2026-02-21 15:21:17] Local login successful for user: pic01
+[2026-02-21 15:21:17] Redirecting pic01 to index.php
+[2026-02-21 16:09:30] Attempted login for user: proc01
+[2026-02-21 16:09:30] Local login successful for user: proc01
+[2026-02-21 16:09:30] Redirecting proc01 to index.php
+[2026-02-21 19:22:30] Attempted login for user: maker01
+[2026-02-21 19:22:30] Local login successful for user: maker01
+[2026-02-21 19:22:30] Redirecting maker01 to index.php

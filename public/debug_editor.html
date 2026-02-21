@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TinyMCE Debug Mode</title>
+    <script src="assets/js/tinymce/tinymce.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .status { padding: 10px; background: #eee; margin-bottom: 20px; border: 1px solid #ccc; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>TinyMCE Independent Debugger</h1>
+    <div class="status" id="statusLog">Loading...</div>
+
+    <form method="post">
+        <textarea id="mytextarea">Hello, World!</textarea>
+    </form>
+
+    <script>
+        const log = document.getElementById('statusLog');
+        
+        try {
+            tinymce.init({
+                selector: '#mytextarea',
+                height: 400,
+                menubar: true, // Enable menu to test clickability
+                plugins: [
+                    'advlist autolink lists link image charmap print preview anchor',
+                    'searchreplace visualblocks code fullscreen',
+                    'insertdatetime media table paste code help wordcount'
+                ],
+                toolbar: 'undo redo | formatselect | ' +
+                'bold italic backcolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help',
+                setup: function (editor) {
+                    editor.on('init', function () {
+                        log.innerHTML += "<br><span class='success'>[OK] Editor Initialized Event Fired.</span>";
+                    });
+                    editor.on('click', function(e) {
+                         log.innerHTML += "<br><span class='success'>[OK] Editor Clicked! Interaction Verify Success.</span>";
+                    });
+                }
+            }).then(function() {
+                 log.innerHTML = "<span class='success'>[OK] Script Loaded. Init function executed.</span>";
+            }).catch(function(err) {
+                 log.innerHTML = "<span class='error'>[ERROR] Init Failed: " + err.message + "</span>";
+            });
+        } catch (e) {
+            log.innerHTML = "<span class='error'>[CRITICAL] " + e.message + "</span>";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<?php
+require_once("./Database/database.php");
+$db = new MyDatabase();
+
+$url = "https://$_SERVER[HTTP_HOST]"."/CITRASF/";
+
+$userID = $_POST["USERID"];
+$password = $_POST["PASSWORD"];
+
+// LDAP configuration
+$ldap_con = ldap_connect("ldap://cimbniaga.co.id:389");
+
+// Set LDAP options
+ldap_set_option($ldap_con, LDAP_OPT_PROTOCOL_VERSION, 3);
+ldap_set_option($ldap_con, LDAP_OPT_NETWORK_TIMEOUT, 10); // 10 seconds timeout
+
+// Log LDAP connection attempt
+log_message("Attempted login for user: $userID");
+
+// Log if LDAP connection fails and stop further execution
+if (!$ldap_con) {
+    log_message("Failed to connect to LDAP server.");
+    exit;
+}
+
+// Query to find LDAP user (use parameterized queries to prevent SQL injection)
+$queryldap = "SELECT * FROM tbluser WHERE USERID = ? AND [Aktif] = '1'";
+$params = array($userID);
+$getUserLdap = sqlsrv_query($db->connect_db(), $queryldap, $params, array("Scrollable" => "buffered"));
+$getUserLdapRows = sqlsrv_num_rows($getUserLdap);
+
+if ($getUserLdapRows > 0) {
+    $r = sqlsrv_fetch_array($getUserLdap);
+    if ($r["AKTIF"] == 1) {
+        if ($r["LDAP"] == 1) {
+            // Attempt LDAP bind
+            $ldap_rn = "cimbniaga\\" . $userID;
+            $bind = @ldap_bind($ldap_con, $ldap_rn, $password);
+            
+            if ($bind) {
+                // Successful LDAP bind
+                log_message("LDAP bind successful for user: $userID");
+                session_start();
+                session_regenerate_id(true); // Secure session handling
+
+                // Set Session Variables
+                $_SESSION['USERID'] = $r['USERID'];
+                $_SESSION['FULLNAME'] = $r['FULLNAME'];
+                $_SESSION['FLAG_ACCESS'] = isset($r['FLAG_ACCESS']) ? $r['FLAG_ACCESS'] : '';
+                $_SESSION['GROUP'] = isset($r['GROUP']) ? $r['GROUP'] : '';
+                $_SESSION['GROUP_AKSES'] = isset($r['GROUP_AKSES']) ? $r['GROUP_AKSES'] : '';
+                $_SESSION['PRODUCT'] = isset($r['PRODUCT']) ? $r['PRODUCT'] : '';
+                $_SESSION['DEPT'] = isset($r['DEPT']) ? $r['DEPT'] : '';
+                $_SESSION['JOB_FUNCTION'] = $r['JOB_FUNCTION'];
+                $_SESSION['DIVISI'] = $r['Divisi'];
+                $_SESSION['NIK'] = $r['NIK'];
+                $_SESSION['NIK_DEPTHEAD'] = $r['NIK_DEPTHEAD'];
+                $_SESSION['NIK_DIVHEAD'] = $r['NIK_DIVHEAD'];
+                $_SESSION['REGION'] = $r['REGION'];
+                $_SESSION['AREA'] = $r['AREA'];
+                $_SESSION['isAdmin'] = $db->isAdmin($_SESSION['USERID']);
+                $_SESSION['eligibleRnRPL'] = $db->eligibleRnRPL($_SESSION['USERID']);
+                $_SESSION['eligibleRnRCC'] = $db->eligibleRnRCC($_SESSION['USERID']);
+
+                log_message("Redirecting $userID to index.php");
+                header('location:index.php');
+            } else {
+                // LDAP bind failed
+                $ldap_error = ldap_error($ldap_con);
+                log_message("LDAP bind failed for user: $userID. Error: $ldap_error");
+
+                ldap_unbind($ldap_con);
+                ?>
+                <body>
+                <script src="assets/js/sweetalert2.all.min.js"></script>
+                </body>
+                <script type='text/javascript'>
+                    Swal.fire('Failed', 'Login LDAP Gagal, Silahkan coba kembali!', 'error').then(function(){
+                        window.location.href='login.php';
+                    });
+                </script>
+                <?php
+                exit; // Stop further execution
+            }
+        } else if ($r["LDAP"] == 0) {
+            // Handle non-LDAP user login
+            $queryUser = "SELECT * FROM tbluser WHERE USERID = ? AND PASSWORD = ? AND [Aktif] = '1'";
+            $paramsUser = array($userID, $password);
+            $getUser = sqlsrv_query($db->connect_db(), $queryUser, $paramsUser, array("Scrollable" => "buffered"));
+            $getUserRows = sqlsrv_num_rows($getUser);
+
+            if ($getUserRows > 0) {
+                $r = sqlsrv_fetch_array($getUser);
+                session_start();
+                session_regenerate_id(true);
+
+                $_SESSION['USERID'] = $r['USERID'];
+                $_SESSION['FULLNAME'] = $r['FULLNAME'];
+                $_SESSION['FLAG_ACCESS'] = isset($r['FLAG_ACCESS']) ? $r['FLAG_ACCESS'] : '';
+                $_SESSION['GROUP'] = isset($r['GROUP']) ? $r['GROUP'] : '';
+                $_SESSION['GROUP_AKSES'] = isset($r['GROUP_AKSES']) ? $r['GROUP_AKSES'] : '';
+                $_SESSION['PRODUCT'] = isset($r['PRODUCT']) ? $r['PRODUCT'] : '';
+                $_SESSION['DEPT'] = isset($r['DEPT']) ? $r['DEPT'] : '';
+                $_SESSION['JOB_FUNCTION'] = $r['JOB_FUNCTION'];
+                $_SESSION['DIVISI'] = $r['Divisi'];
+                $_SESSION['NIK'] = $r['NIK'];
+                $_SESSION['NIK_DEPTHEAD'] = $r['NIK_DEPTHEAD'];
+                $_SESSION['NIK_DIVHEAD'] = $r['NIK_DIVHEAD'];
+                $_SESSION['REGION'] = $r['REGION'];
+                $_SESSION['AREA'] = $r['AREA'];
+                $_SESSION['isAdmin'] = $db->isAdmin($_SESSION['USERID']);
+                $_SESSION['eligibleRnRPL'] = $db->eligibleRnRPL($_SESSION['USERID']);
+                $_SESSION['eligibleRnRCC'] = $db->eligibleRnRCC($_SESSION['USERID']);
+
+                log_message("Non-LDAP login successful for user: $userID");
+
+                // Redirect based on access level
+                if (str_contains($r['FLAG_ACCESS'], '0')) {
+                    header('location:index.php');
+                } else if (str_contains($r['FLAG_ACCESS'], '1')) {
+                    header('location:index.php');
+                } else if (str_contains($r['FLAG_ACCESS'], '2')) {
+                    if (str_contains($r['DEPT'], 'QAM')) {
+                        log_message("redirecting $userID to index.php");
+                        header('location:index.php');
+                    } else {
+                        log_message("redirecting $userID to index.php");
+                        header('location:index.php');
+                    }
+                } else if (str_contains($r['FLAG_ACCESS'], '3')) {
+                    log_message("redirecting $userID to index.php");
+                    header('location:index.php');
+                }
+            } else {
+                // Invalid password for non-LDAP
+                log_message("Invalid password for user: $userID");  
+                ?>
+                <body>
+                <script src="assets/js/sweetalert2.all.min.js"></script>
+                </body>
+                <script type='text/javascript'>
+                    Swal.fire('Failed', 'Password Salah', 'error').then(function(){
+                        window.location.href='login.php';
+                    });
+                </script>
+                <?php
+            }
+        }
+    }
+} else {
+    // User not found in database
+    log_message("User not found: $userID");
+    ?>
+    <body>
+    <script src="assets/js/sweetalert2.all.min.js"></script>
+    </body>
+    <script type='text/javascript'>
+        Swal.fire('Not Found', 'User Tidak Ditemukan! Hub Admin', 'error').then(function(){
+            window.location.href='login.php';
+        });
+    </script>
+    <?php
+}
+
+ldap_unbind($ldap_con);
+
+// Function for logging messages
+function log_message($message) {
+    $logDir = _DIR_ . '/logs';
+    $logFile = $logDir . '/login.log';
+
+    // Check if the directory exists, if not, create it
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0755, true);
+    }
+
+    // Prepare the log entry with a timestamp
+    $timestamp = date('Y-m-d H:i:s');
+    $logEntry = "[$timestamp] $message" . PHP_EOL;
+
+    // Write to the log file
+    if (file_put_contents($logFile, $logEntry, FILE_APPEND) === false) {
+        error_log("Failed to write to log file: $logFile");
+    }
+}
+?>

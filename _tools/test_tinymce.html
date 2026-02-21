@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TinyMCE Test - Simple</title>
+</head>
+<body>
+    <h2>TinyMCE Simple Test</h2>
+    <textarea id="myeditor">Hello, this is a test!</textarea>
+    
+    <!-- Load TinyMCE -->
+    <script src="http://localhost/citra8/public/assets/js/tinymce/tinymce.min.js"></script>
+    <script>
+        console.log('TinyMCE loaded?', typeof tinymce !== 'undefined' ? 'YES' : 'NO');
+        
+        if (typeof tinymce !== 'undefined') {
+            tinymce.init({
+                selector: '#myeditor',
+                height: 300,
+                menubar: false,
+                plugins: '',
+                toolbar: 'undo redo | bold italic',
+                promotion: false,
+                branding: false,
+                base_url: 'http://localhost/citra8/public/assets/js/tinymce',
+                suffix: '.min',
+                setup: function(editor) {
+                    editor.on('init', function() {
+                        alert('✅ TinyMCE berhasil init!');
+                    });
+                }
+            });
+        } else {
+            document.body.innerHTML += '<p style="color:red;">❌ TinyMCE gagal load!</p>';
+        }
+    </script>
+</body>
+</html>

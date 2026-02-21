@@ -1,0 +1,451 @@
+/* CITRA System Premium Styles */
+:root {
+    --primary-red: #D32F2F;
+    --primary-red-hover: #B71C1C;
+    --primary-red-light: #FFEBEE;
+    
+    --bg-body: #F4F6F8;
+    --bg-surface: #FFFFFF;
+    --bg-sidebar: #F9FAFB;
+    
+    --text-primary: #1F2937;
+    --text-secondary: #4B5563;
+    --text-muted: #9CA3AF;
+    
+    --border-light: #E5E7EB;
+    --border-focus: #D32F2F;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    
+    --sidebar-width: 250px;
+    --header-height: 60px;
+    --font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Base Reset & Typography */
+body {
+    margin: 0;
+    font-family: var(--font-family);
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 600; color: var(--text-primary); }
+p { margin: 0 0 10px; line-height: 1.5; color: var(--text-secondary); }
+
+/* Layout Structure */
+.header {
+    height: var(--header-height);
+    background: var(--primary-red);
+    color: white;
+    position: fixed;
+    width: 100%;
+    z-index: 40; /* Below sidebar */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    padding-left: calc(var(--sidebar-width) + 24px); /* Space for sidebar */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+}
+
+.header h3 { color: white; font-size: 1.125rem; letter-spacing: 0.5px; }
+
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-light);
+    padding-top: 0; /* Remove padding, title starts from top */
+    height: 100%;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 50; /* On top of header */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Stretch items to fill width */
+    justify-content: flex-start; /* Start from top vertically */
+    transition: transform 0.3s ease; /* Smooth collapse animation */
+}
+
+/* Sidebar Title Styling */
+.sidebar-title {
+    width: 100%;
+    padding: 20px 24px;
+    margin-bottom: 10px;
+    box-sizing: border-box; /* Maintain padding without overflowing */
+}
+
+.sidebar-title h3 {
+    color: var(--primary-red); /* Red text */
+    font-size: 1.125rem;
+    letter-spacing: 0.5px;
+    margin: 0;
+    font-weight: 700;
+}
+
+/* Desktop: Collapsed State */
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+/* When collapsed, adjust main content */
+body.sidebar-collapsed .main {
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+body.sidebar-collapsed .header {
+    padding-left: 24px;
+    transition: padding-left 0.3s ease;
+}
+
+.main {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--header-height);
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    height: calc(100vh - var(--header-height));
+    box-sizing: border-box;
+}
+
+/* Sidebar Navigation */
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%; /* Explicitly force full width */
+    box-sizing: border-box; /* Include padding in width */
+    padding: 8px 24px; /* Reduced vertical padding (Thinner) */
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem; /* Slightly smaller font */
+    font-weight: 400; /* Regular weight instead of Medium */
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.menu-item:hover {
+    background: #F3F4F6;
+    color: var(--primary-red);
+}
+
+.menu-item.active {
+    background: #FEF2F2; /* Very light red tint */
+    color: var(--primary-red); /* Red Text */
+    border-left-color: var(--primary-red); /* Thin Red Border */
+    font-weight: 600;
+    border-radius: 0;
+    margin: 0;
+}
+
+.menu-item.active i {
+    color: var(--primary-red); /* Red Icon */
+}
+
+/* Cards & Surfaces */
+.card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--primary-red);
+    color: white;
+    box-shadow: 0 1px 2px rgba(211, 47, 47, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--primary-red-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(211, 47, 47, 0.4);
+}
+
+.btn-secondary {
+    background: white;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
+}
+
+/* Form Elements */
+.form-group { margin-bottom: 20px; }
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+
+.form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--primary-red);
+    box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+}
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed #D1D5DB;
+    padding: 25px;
+    text-align: center;
+    background: #F9FAFB;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-area:hover {
+    border-color: var(--primary-red);
+    background: var(--primary-red-light);
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: #9CA3AF;
+    margin-bottom: 12px;
+    display: block;
+}
+
+/* Tabs (Main) */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 24px;
+}
+
+.tab-item {
+    padding: 12px 24px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.tab-item:hover { color: var(--primary-red); }
+
+.tab-item.active {
+    border-bottom-color: var(--primary-red);
+    color: var(--primary-red);
+    font-weight: 700;
+}
+
+/* Excel Preview & Sheet Tabs */
+.preview-container {
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 0 0 8px 8px; /* Rounded bottom */
+    min-height: 500px;
+    max-height: 700px;
+    padding: 20px;
+    overflow: auto;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+}
+
+.sheet-tabs-nav {
+    background: #E5E7EB; /* Darker than before for contrast */
+    padding: 6px 10px 0;
+    display: flex;
+    gap: 4px;
+    border-radius: 8px 8px 0 0; /* Rounded top */
+    border: 1px solid var(--border-light);
+    border-bottom: none;
+}
+
+.btn-sheet {
+    padding: 8px 16px;
+    background: #F3F4F6;
+    border: 1px solid transparent; 
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    position: relative;
+    top: 1px; /* Overlap border */
+}
+
+.btn-sheet:hover { background: #FFFFFF; }
+
+.btn-sheet.active {
+    background: #FFFFFF;
+    color: var(--primary-red);
+    font-weight: 700;
+    border-color: var(--border-light);
+    border-bottom-color: white; /* Hide bottom border to merge with content */
+    z-index: 2;
+    box-shadow: 0 -2px 3px rgba(0,0,0,0.02);
+}
+
+/* Excel Content Table */
+.excel-preview {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: 'Segoe UI', sans-serif; /* Excel-like font */
+    background: white;
+}
+
+.excel-preview td, .excel-preview th {
+    border: 1px solid #E5E7EB;
+    padding: 6px 10px;
+    min-width: 60px;
+    white-space: pre-wrap; /* Allow wrapping */
+}
+
+.excel-preview tr:first-child td {
+    background: #F9FAFB;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* ... existing code ... */
+
+/* RESPONSIVE DESIGN */
+
+/* Sidebar Toggle Button (Visible on Desktop) */
+#sidebar-toggle {
+    display: block !important; /* Show on all screen sizes */
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 15px;
+    transition: transform 0.2s ease;
+}
+
+#sidebar-toggle:hover {
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 250px; /* Keep var for calculation, but behavior changes */
+        --header-height: 60px;
+    }
+
+    /* Header Adjustments */
+    .header {
+        padding: 0 15px;
+        justify-content: flex-start;
+        gap: 15px;
+    }
+
+    /* Sidebar - Off-canvas Mobile */
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        z-index: 1000; /* Higher than header content */
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    /* Main Content - Full Width Mobile */
+    .main {
+        margin-left: 0;
+        padding: 15px;
+        width: 100%;
+    }
+
+    /* Overlay for mobile sidebar */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 900;
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    /* Grid Stacking for Review Page & Dashboard */
+    .grid-container, 
+    .bento-grid,
+    .print-grid {
+        grid-template-columns: 1fr !important;
+        display: block !important; /* Fallback */
+        display: grid !important; 
+    }
+    
+    /* Specific overrides for specific layouts */
+    .grid-container > div, 
+    .bento-box {
+        margin-bottom: 20px;
+    }
+
+    .panel-column {
+        width: 100%;
+    }
+
+    /* Info Card Grid Stacking */
+    .request-info-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* Responsive Tables */
+    table {
+        min-width: 600px; /* Force scroll */
+    }
+    
+    /* Header User Info - Simplify on Mobile */
+    .header-user-info span {
+        display: none; /* Hide welcome text, keep logout only or icon */
+    }
+    
+    /* Hamburger Menu Visible */
+    #sidebar-toggle {
+        display: block !important;
+    }
+}
+
+
