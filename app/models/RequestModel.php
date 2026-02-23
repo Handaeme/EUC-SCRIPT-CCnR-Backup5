@@ -2026,35 +2026,39 @@ class RequestModel {
         
         return db_query($this->conn, $sql, $params);
     }
-    public function updateActiveStatus($requestId, $isActive) {
+    public function updateActiveStatus($requestId, $isActive, $startDate = null, $userId = null) {
         // Check if library entry exists
         $checkSql = "SELECT TOP 1 1 FROM script_library WHERE request_id = ?";
         $check = db_query($this->conn, $checkSql, [$requestId]);
         
-        // Use db_has_rows or fetch to verify
         $exists = false;
         if ($check && db_fetch_array($check)) {
             $exists = true;
         }
 
         if (!$exists) {
-            // Missing library entry (Legacy/Migrated)! Generate it.
             $this->finalizeLibrary($requestId);
         }
 
-        // Update script_library table
-        // Note: script_library may not have updated_at column, so we remove it to be safe.
-        // But start_date should exist (from finalizeLibrary)
+        $params = [$isActive];
         
-        $sql = "UPDATE script_library SET is_active = ?";
-        
-        // If activating, ensure start_date is set (for legacy items)
         if ($isActive == 1) {
-             $sql .= ", start_date = ISNULL(start_date, CAST(GETDATE() AS DATE))";
+            // Activating: save start_date, activated_at, activated_by
+            $sql = "UPDATE script_library SET is_active = ?, 
+                    start_date = ?, 
+                    activated_at = GETDATE(), 
+                    activated_by = ? 
+                    WHERE request_id = ?";
+            $params[] = $startDate ?: date('Y-m-d'); // fallback to today
+            $params[] = $userId ?: ($_SESSION['user']['userid'] ?? 'UNKNOWN');
+            $params[] = $requestId;
+        } else {
+            // Deactivating: keep activation history, only flip status
+            $sql = "UPDATE script_library SET is_active = ? WHERE request_id = ?";
+            $params[] = $requestId;
         }
 
-        $sql .= " WHERE request_id = ?";
-        return db_query($this->conn, $sql, [$isActive, $requestId]);
+        return db_query($this->conn, $sql, $params);
     }
 
 
@@ -2065,5 +2069,14 @@ class RequestModel {
             return $row;
         }
         return null;
+    }
+
+    public function getSqlServerTodayDate() {
+        $sql = "SELECT CAST(GETDATE() AS DATE) as today_date";
+        $stmt = db_query($this->conn, $sql);
+        if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+            return $row['today_date'];
+        }
+        return date('Y-m-d'); // fallback
     }
 }

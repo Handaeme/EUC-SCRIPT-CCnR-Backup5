@@ -116,10 +116,23 @@
             </a>
             
             <?php if (!empty($canManage)): ?>
-            <?php $isActive = (int)($item['is_active'] ?? 0); ?>
+            <?php 
+                $isActive = (int)($item['is_active'] ?? 0); 
+                $isSched = false;
+                if ($isActive && !empty($item['start_date'])) {
+                    $td = new DateTime('today');
+                    $st = ($item['start_date'] instanceof DateTime) ? clone $item['start_date'] : new DateTime($item['start_date']);
+                    $st->setTime(0,0,0);
+                    if ($st > $td) $isSched = true;
+                }
+            ?>
             <button onclick="toggleActivation(<?php echo $item['request_id']; ?>, <?php echo $isActive; ?>)" 
-                   style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; background:<?php echo $isActive ? '#f0fdf4' : 'white'; ?>; border:1px solid <?php echo $isActive ? '#16a34a' : '#cbd5e1'; ?>; border-radius:6px; color:<?php echo $isActive ? '#15803d' : '#475569'; ?>; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);" title="<?php echo $isActive ? 'Deactivate' : 'Activate'; ?>">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                   style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; background:<?php echo !$isActive ? 'white' : ($isSched ? '#fffbeb' : '#f0fdf4'); ?>; border:1px solid <?php echo !$isActive ? '#cbd5e1' : ($isSched ? '#fcd34d' : '#16a34a'); ?>; border-radius:6px; color:<?php echo !$isActive ? '#475569' : ($isSched ? '#d97706' : '#15803d'); ?>; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);" title="<?php echo !$isActive ? 'Activate' : ($isSched ? 'Scheduled - Click to Deact' : 'Active - Click to Deact'); ?>">
+                <?php if ($isSched): ?>
+                    <i class="fi fi-rr-calendar-clock" style="font-size:16px;"></i>
+                <?php else: ?>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                <?php endif; ?>
             </button>
             <?php endif; ?>
             

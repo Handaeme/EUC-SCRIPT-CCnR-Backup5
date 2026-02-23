@@ -334,6 +334,8 @@ class DashboardController extends Controller {
             exit;
         }
         
+        $sqlServerToday = $reqModel->getSqlServerTodayDate();
+
         $this->view('dashboard/library', [
             'libraryItems' => $libraryItems,
             'startDate' => $startDate,
@@ -347,10 +349,9 @@ class DashboardController extends Controller {
             'currentPage' => $page,
             'totalPages' => $totalPages,
             'totalItems' => $totalItems,
-            'totalPages' => $totalPages,
-            'totalItems' => $totalItems,
             'perPage' => $perPage,
-            'search' => $search
+            'search' => $search,
+            'sqlServerToday' => $sqlServerToday
         ]);
     }
     

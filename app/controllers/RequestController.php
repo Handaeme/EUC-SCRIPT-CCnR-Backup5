@@ -1442,6 +1442,27 @@ class RequestController extends Controller {
         $isActive = $libraryItem['is_active'] ?? 1; // Default true if not found (legacy behavior)
         $startDate = $libraryItem['start_date'] ?? $request['start_date'] ?? null;
 
+        // [NEW] Get Activator User Info (for "Activated by" display)
+        $activatorInfo = null;
+        $activatedBy = $libraryItem['activated_by'] ?? null;
+        if ($activatedBy) {
+            $userModel = $this->model('UserModel');
+            $activatorUser = $userModel->getById($activatedBy);
+            if ($activatorUser) {
+                $activatorInfo = [
+                    'userid' => $activatorUser['USERID'] ?? $activatedBy,
+                    'fullname' => $activatorUser['FULLNAME'] ?? $activatedBy,
+                    'job_function' => $activatorUser['JOB_FUNCTION'] ?? '',
+                    'divisi' => $activatorUser['DIVISI'] ?? '',
+                    'dept' => $activatorUser['DEPT'] ?? ''
+                ];
+            }
+        }
+        $activatedAt = $libraryItem['activated_at'] ?? null;
+
+        // [NEW] Get SQL Server Today Date to prevent PHP timezone discrepancy
+        $sqlServerToday = $reqModel->getSqlServerTodayDate();
+
         $this->view('library/detail', [
             'request' => $request,
             'content' => $content,
@@ -1452,7 +1473,10 @@ class RequestController extends Controller {
             'existingDraft' => $existingDraft,
             'allUsers' => $allUsers,
             'isActive' => $isActive,
-            'startDate' => $startDate
+            'startDate' => $startDate,
+            'activatorInfo' => $activatorInfo,
+            'activatedAt' => $activatedAt,
+            'sqlServerToday' => $sqlServerToday
         ]);
     }
 
@@ -1822,23 +1846,26 @@ class RequestController extends Controller {
         
         // Security Check: Only Maker/Procedure
         $dept = $_SESSION['user']['dept'] ?? '';
-        if ($dept !== 'MAKER' && $dept !== 'PROCEDURE' && $dept !== 'CPMS' && $dept !== 'SPV') {
+        if ($dept !== 'MAKER' && $dept !== 'PROCEDURE' && $dept !== 'CPMS') {
              echo json_encode(['success'=>false, 'error'=>'Unauthorized Access']); return;
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
         $requestId = $input['request_id'] ?? null;
         $isActive = $input['is_active'] ?? null;
+        $startDate = $input['start_date'] ?? null; // User-picked date from popup
 
         if (!$requestId || $isActive === null) {
             echo json_encode(['success'=>false, 'error'=>'Missing Parameters']); return;
         }
 
+        $userId = $_SESSION['user']['userid'] ?? 'UNKNOWN';
         $reqModel = $this->model('RequestModel');
-        if ($reqModel->updateActiveStatus($requestId, $isActive)) {
+        if ($reqModel->updateActiveStatus($requestId, $isActive, $startDate, $userId)) {
             // Log Audit
             $statusLabel = $isActive ? 'ACTIVATED' : 'DEACTIVATED';
-            $reqModel->logAudit($requestId, 'N/A', $statusLabel, $dept, $_SESSION['user']['userid'], 'Script visibility toggled to ' . ($isActive ? 'Active' : 'Inactive'));
+            $details = $isActive ? 'Activated with start_date: ' . ($startDate ?: 'today') . ' by ' . $userId : 'Deactivated by ' . $userId;
+            $reqModel->logAudit($requestId, 'N/A', $statusLabel, $dept, $userId, $details);
             
             echo json_encode(['success'=>true]);
         } else {

@@ -19,10 +19,21 @@
             
             <?php if (!empty($canManage)): ?>
             <div style="margin-top:5px;">
-                <?php $isActive = (int)($item['is_active'] ?? 0); ?>
+                <?php 
+                   $isActive = (int)($item['is_active'] ?? 0); 
+                   $isSched = false;
+                   if ($isActive && !empty($item['start_date'])) {
+                       $td = new DateTime($sqlServerToday ?? 'today');
+                       $td->setTime(0,0,0);
+                       
+                       $st = ($item['start_date'] instanceof DateTime) ? clone $item['start_date'] : new DateTime($item['start_date']);
+                       $st->setTime(0,0,0);
+                       if ($st > $td) $isSched = true;
+                   }
+                ?>
                 <button onclick="toggleActivation(<?php echo $item['request_id']; ?>, <?php echo $isActive; ?>)" 
-                        style="width:100%; border:1px solid <?php echo $isActive ? '#16a34a' : '#94a3b8'; ?>; background:<?php echo $isActive ? '#f0fdf4' : '#f8fafc'; ?>; color:<?php echo $isActive ? '#15803d' : '#64748b'; ?>; border-radius:6px; padding:4px; font-size:10px; font-weight:600; cursor:pointer;">
-                    <?php echo $isActive ? 'Active' : 'Inactive'; ?>
+                        style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:4px; border:1px solid <?php echo !$isActive ? '#cbd5e1' : ($isSched ? '#fcd34d' : '#16a34a'); ?>; background:<?php echo !$isActive ? '#f8fafc' : ($isSched ? '#fffbeb' : '#f0fdf4'); ?>; color:<?php echo !$isActive ? '#64748b' : ($isSched ? '#d97706' : '#15803d'); ?>; border-radius:6px; padding:4px; font-size:10px; font-weight:600; cursor:pointer;" title="Click to toggle">
+                    <?php echo !$isActive ? 'Inactive' : ($isSched ? '<i class="fi fi-rr-calendar-clock"></i> Sched' : 'Active'); ?>
                 </button>
             </div>
             <?php endif; ?>

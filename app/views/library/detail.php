@@ -319,49 +319,63 @@ function downloadContentAsExcel() {
             <div>
                 <h2 style="color:var(--primary-red); margin:0;">Library Script Detail</h2>
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <p style="color:var(--text-secondary); margin:4px 0;">Script No: <strong><?php echo htmlspecialchars($request['script_number']); ?></strong></p>
-                    <?php if (!empty($startDate)): ?>
-                        <span style="background:#eff6ff; color:#1e40af; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; border:1px solid #dbeafe;">
-                            Starts: <?php echo date('d M Y', strtotime($startDate)); ?>
-                        </span>
-                    <?php endif; ?>
-                    <?php if (isset($isActive)): ?>
-                        <span class="status-badge <?php echo $isActive ? 'status-active' : 'status-inactive'; ?>" style="font-size:11px; padding:2px 8px; border-radius:12px; font-weight:600; border:1px solid currentColor; <?php echo $isActive ? 'background:#ecfdf5; color:#047857; border-color:#d1fae5;' : 'background:#fef2f2; color:#b91c1c; border-color:#fecaca;'; ?>">
-                            <?php echo $isActive ? 'ACTIVE' : 'INACTIVE'; ?>
-                        </span>
-                    <?php endif; ?>
+                    <?php 
+                        if (isset($isActive)) {
+                            // Cek apakah statusnya Scheduled (Telah diaktifkan, tapi Start Date masih besok/lusa)
+                            $isScheduled = false;
+                            if ($isActive && !empty($startDate)) {
+                                $todayDate = new DateTime($sqlServerToday ?? 'today');
+                                $todayDate->setTime(0, 0, 0);
+                                
+                                $startDt = ($startDate instanceof DateTime) ? clone $startDate : new DateTime($startDate);
+                                $startDt->setTime(0, 0, 0);
+                                if ($startDt > $todayDate) {
+                                    $isScheduled = true;
+                                }
+                            }
+                            
+                            if (!$isActive) {
+                                $badgeStyle = 'background:#fef2f2; color:#b91c1c; border-color:#fecaca;';
+                                $badgeText = 'INACTIVE';
+                                $badgeIcon = '';
+                            } elseif ($isScheduled) {
+                                $badgeStyle = 'background:#fff7ed; color:#c2410c; border-color:#ffedd5;';
+                                $badgeText = 'SCHEDULED';
+                                $badgeIcon = '<i class="fi fi-rr-calendar-clock" style="font-size:11px; margin-right:4px;"></i>';
+                            } else {
+                                $badgeStyle = 'background:#ecfdf5; color:#047857; border-color:#d1fae5;';
+                                $badgeText = 'ACTIVE';
+                                $badgeIcon = '';
+                            }
+                        }
+                    ?>
                 </div>
             </div>
         </div>
 
-        <!-- REUSE / REVISE ACTION AREA -->
-        <?php if (isset($_SESSION['user']['dept']) && $_SESSION['user']['dept'] === 'MAKER'): ?>
-        <div style="display:flex; gap:10px;">
-             <!-- Button to trigger Modal -->
-             <button onclick="document.getElementById('reuseModal').style.display='flex'" style="background:#ef4444; color:white; padding:8px 16px; border:none; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px;">
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                 Gunakan Script Kembali
-             </button>
-        </div>
-        <?php endif; ?>
+        <!-- ACTION BUTTONS AREA -->
+        <div style="display:flex; gap:10px; align-items:center;">
+            
+            <!-- REUSE / REVISE ACTION AREA -->
+            <?php if (isset($_SESSION['user']['dept']) && $_SESSION['user']['dept'] === 'MAKER'): ?>
+                 <button onclick="document.getElementById('reuseModal').style.display='flex'" 
+                         style="background:#ef4444; color:white; padding:8px 16px; border:1px solid #ef4444; border-radius:6px; font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s; height:36px; box-sizing:border-box;">
+                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:flex;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                     Gunakan Script
+                 </button>
+            <?php endif; ?>
 
-        <!-- ACTIVE TOGGLE (Bonus: For Maker/Procedure/SPV) -->
-        <?php if (in_array($_SESSION['user']['dept'] ?? '', ['MAKER', 'PROCEDURE', 'CPMS', 'SPV'])): ?>
-        <div style="display:flex; gap:10px;">
-             <?php $isAct = $isActive ?? 1; ?>
-             <button onclick="toggleActiveStatus(<?php echo $request['id']; ?>, <?php echo $isAct ? 0 : 1; ?>)" 
-                     style="background:<?php echo $isAct ? '#fff' : '#10b981'; ?>; color:<?php echo $isAct ? '#ef4444' : 'white'; ?>; padding:8px 16px; border:1px solid <?php echo $isAct ? '#ef4444' : 'transparent'; ?>; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s;">
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <?php if ($isAct): ?>
-                        <circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>
-                    <?php else: ?>
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    <?php endif; ?>
-                 </svg>
-                 <?php echo $isAct ? 'Deactivate Script' : 'Activate Script'; ?>
-             </button>
+            <!-- ACTIVE TOGGLE (Only Maker & Procedure/CPMS) -->
+            <?php if (in_array($_SESSION['user']['dept'] ?? '', ['MAKER', 'PROCEDURE', 'CPMS'])): ?>
+                 <?php $isAct = $isActive ?? 1; ?>
+                 <button onclick="toggleActiveStatus(<?php echo $request['id']; ?>, <?php echo $isAct ? 0 : 1; ?>)" 
+                         style="background:<?php echo $isAct ? '#fff' : '#10b981'; ?>; color:<?php echo $isAct ? '#ef4444' : 'white'; ?>; padding:8px 16px; border:1px solid <?php echo $isAct ? '#ef4444' : '#10b981'; ?>; border-radius:6px; font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s; height:36px; box-sizing:border-box;">
+                     <i class="fi fi-rr-<?php echo $isAct ? 'cross-circle' : 'calendar-check'; ?>" style="font-size:14px; display:flex;"></i>
+                     <?php echo $isAct ? 'Deactivate Script' : 'Activate Script'; ?>
+                 </button>
+            <?php endif; ?>
+            
         </div>
-        <?php endif; ?>
 
         <!-- SPECIAL PROCEDURE REVISION ENTRY POINT -->
         <?php if (isset($_SESSION['user']['dept']) && ($_SESSION['user']['dept'] === 'PROCEDURE' || $_SESSION['user']['dept'] === 'CPMS')): ?>
@@ -561,7 +575,7 @@ function downloadContentAsExcel() {
                         </div>
                     </div>
 
-                    <!-- Row 2: Identifiers (Script No & Ticket ID) -->
+                    <!-- Row 2: Identifiers & Details -->
                     <div style="padding:5px;">
                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Script Number</div>
                         <div style="color:#334155; font-weight:700; margin-top:2px; word-break:break-word;">
@@ -580,105 +594,139 @@ function downloadContentAsExcel() {
                         </div>
                     </div>
 
-                    <div style="padding:5px;"></div> <!-- Empty Spacer -->
-                    <div style="padding:5px;"></div> <!-- Empty Spacer -->
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Jenis</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;"><?php echo htmlspecialchars($request['jenis'] ?? '-'); ?></div>
+                    </div>
 
-                     <!-- Row 3: People -->
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Maker</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;">
-                              <?php echo htmlspecialchars($request['maker_name'] ?? $request['created_by'] ?? '-'); ?>
-                         </div>
-                     </div>
-
-                     <?php 
-                        // [ENHANCEMENT] Extract Approver Names from Logs
-                        $spvName = '-';
-                        $picName = '-';
-                        $procName = '-';
-                        
-                        foreach($logs as $log) {
-                            if ($log['action'] === 'APPROVE_SPV') $spvName = $log['full_name'] ?? $log['user_id'];
-                            if ($log['action'] === 'APPROVE_PIC') $picName = $log['full_name'] ?? $log['user_id'];
-                            if ($log['action'] === 'APPROVE_PROCEDURE' || $log['action'] === 'LIBRARY_UPDATE') $procName = $log['full_name'] ?? $log['user_id'];
-                        }
-                     ?>
-
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">SPV</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;">
-                              <?php echo htmlspecialchars($spvName); ?>
-                         </div>
-                     </div>
-
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">PIC</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;">
-                              <?php echo htmlspecialchars($picName); ?>
-                         </div>
-                     </div>
-
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Procedure</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;">
-                              <?php echo htmlspecialchars($procName); ?>
-                         </div>
-                     </div>
-
-                     <!-- Row 4: Dates & Types -->
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Created Date</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;"><?php 
-                             if (isset($request['created_at'])) {
-                                 echo ($request['created_at'] instanceof DateTime) ? $request['created_at']->format('d M Y') : date('d M Y', strtotime($request['created_at']));
-                             } else { echo "-"; }
-                         ?></div>
-                     </div>
-
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Published Date</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;"><?php 
-                             $pubDate = $request['updated_at'] ?? $request['created_at'];
-                             if (isset($pubDate)) {
-                                 echo ($pubDate instanceof DateTime) ? $pubDate->format('d M Y') : date('d M Y', strtotime($pubDate));
-                             } else { echo "-"; }
-                         ?></div>
-                     </div>
-
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Start Date</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;"><?php 
-                             if (isset($startDate)) {
-                                 echo ($startDate instanceof DateTime) ? $startDate->format('d M Y') : date('d M Y', strtotime($startDate));
-                             } else { echo "-"; }
-                         ?></div>
-                     </div>
-
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Jenis</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;"><?php echo htmlspecialchars($request['jenis'] ?? '-'); ?></div>
-                     </div>
-
-                     <div style="padding:5px;">
+                    <div style="padding:5px;">
                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Produk</div>
                         <div style="color:#334155; font-weight:700; margin-top:2px;"><?php echo htmlspecialchars($request['produk'] ?? '-'); ?></div>
-                     </div>
+                    </div>
 
-                     <!-- Row 5: Details -->
-                     <div style="padding:5px;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Kategori</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;"><?php echo htmlspecialchars($request['kategori'] ?? '-'); ?></div>
-                     </div>
+                    <!-- Row 3: Details Cont & Media -->
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Kategori</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;"><?php echo htmlspecialchars($request['kategori'] ?? '-'); ?></div>
+                    </div>
 
-                     <div style="padding:5px; grid-column: span 2;">
-                         <div style="color:#94a3b8; font-size:11px; font-weight:600;">Media Channels</div>
-                         <div style="color:#334155; font-weight:700; margin-top:2px;">
-                             <?php 
-                                 $medias = preg_split('/[,;]/', $request['media'] ?? '', -1, PREG_SPLIT_NO_EMPTY);
-                                 echo htmlspecialchars(implode(', ', array_map('trim', $medias)));
-                             ?>
-                         </div>
-                     </div>
+                    <div style="padding:5px; grid-column: span 3;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Media Channels</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;">
+                            <?php 
+                                $medias = preg_split('/[,;]/', $request['media'] ?? '', -1, PREG_SPLIT_NO_EMPTY);
+                                echo htmlspecialchars(implode(', ', array_map('trim', $medias)));
+                            ?>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: People -->
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Maker</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;">
+                             <?php echo htmlspecialchars($request['maker_name'] ?? $request['created_by'] ?? '-'); ?>
+                        </div>
+                    </div>
+
+                    <?php 
+                       // [ENHANCEMENT] Extract Approver Names from Logs
+                       $spvName = '-';
+                       $picName = '-';
+                       $procName = '-';
+                       
+                       foreach($logs as $log) {
+                           if ($log['action'] === 'APPROVE_SPV') $spvName = $log['full_name'] ?? $log['user_id'];
+                           if ($log['action'] === 'APPROVE_PIC') $picName = $log['full_name'] ?? $log['user_id'];
+                           if ($log['action'] === 'APPROVE_PROCEDURE' || $log['action'] === 'LIBRARY_UPDATE') $procName = $log['full_name'] ?? $log['user_id'];
+                       }
+                    ?>
+
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">SPV</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;">
+                             <?php echo htmlspecialchars($spvName); ?>
+                        </div>
+                    </div>
+
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">PIC</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;">
+                             <?php echo htmlspecialchars($picName); ?>
+                        </div>
+                    </div>
+
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Procedure</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;">
+                             <?php echo htmlspecialchars($procName); ?>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Dates & Activation Info -->
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Created Date</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;"><?php 
+                            if (isset($request['created_at'])) {
+                                echo ($request['created_at'] instanceof DateTime) ? $request['created_at']->format('d M Y') : date('d M Y', strtotime($request['created_at']));
+                            } else { echo "-"; }
+                        ?></div>
+                    </div>
+
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Published Date</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px;"><?php 
+                            $pubDate = $request['updated_at'] ?? $request['created_at'];
+                            if (isset($pubDate)) {
+                                echo ($pubDate instanceof DateTime) ? $pubDate->format('d M Y') : date('d M Y', strtotime($pubDate));
+                            } else { echo "-"; }
+                        ?></div>
+                    </div>
+
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Start Date</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px; display:flex; align-items:center; gap:8px;">
+                            <?php 
+                                if (isset($startDate) && !empty($isActive)) {
+                                    echo ($startDate instanceof DateTime) ? $startDate->format('d M Y') : date('d M Y', strtotime($startDate));
+                                } else { echo "-"; }
+                            ?>
+                            <!-- NEW: Status Badge moved here -->
+                            <?php if (isset($isActive)): ?>
+                                <span style="font-size:10px; padding:2px 6px; border-radius:12px; font-weight:600; border:1px solid currentColor; <?php echo $badgeStyle; ?> display:inline-flex; align-items:center;">
+                                    <?php echo $badgeIcon . $badgeText; ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div style="padding:5px;">
+                        <div style="color:#94a3b8; font-size:11px; font-weight:600;">Activated By</div>
+                        <div style="color:#334155; font-weight:700; margin-top:2px; font-size:12px;">
+                            <?php if (!empty($activatorInfo) && $isActive): ?>
+                                <?php
+                                    $actName = htmlspecialchars($activatorInfo['fullname']);
+                                    $actId = htmlspecialchars($activatorInfo['userid']);
+                                    $actDept = strtoupper(trim($activatorInfo['dept'] ?? ''));
+                                    if ($actDept === 'PROCEDURE' || $actDept === 'CPMS' || stripos($activatorInfo['divisi'] ?? '', 'Quality Analysis') !== false) {
+                                        $actLabel = 'CPMS';
+                                    } else {
+                                        $actLabel = htmlspecialchars($activatorInfo['job_function'] ?: $actDept ?: 'User');
+                                    }
+                                ?>
+                                <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="<?php echo $actName . ' (' . $actId . ')'; ?>">
+                                    <?php echo $actName; ?>
+                                </div>
+                                <div style="color:#64748b; font-size:10px; font-weight:600; margin-top:2px;">
+                                    <?php echo $actLabel; ?>
+                                    <?php if (!empty($activatedAt)): ?>
+                                        &bull; <?php echo ($activatedAt instanceof DateTime) ? $activatedAt->format('d M') : date('d M', strtotime($activatedAt)); ?>
+                                    <?php endif; ?>
+                                </div>
+                            <?php else: ?>
+                                -
+                            <?php endif; ?>
+                        </div>
+                    </div>
                  </div>
              </div>
 
@@ -1008,45 +1056,140 @@ function downloadContentAsExcel() {
 
 <script>
     function toggleActiveStatus(requestId, newStatus) {
-        const action = newStatus ? 'Activate' : 'Deactivate';
-        const color = newStatus ? '#10b981' : '#ef4444';
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: `${action} Script?`,
-                text: `Are you sure you want to ${action.toLowerCase()} this script?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: color,
-                confirmButtonText: `Yes, ${action} it!`
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    performToggle(requestId, newStatus);
-                }
-            });
+        if (newStatus === 1) {
+            // ACTIVATE: Show Custom Date Picker Modal
+            const defaultDate = '<?php echo !empty($startDate) ? date("Y-m-d", strtotime($startDate)) : date("Y-m-d"); ?>';
+            
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'activate-modal-overlay';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center; animation:fadeIn 0.2s;';
+            
+            overlay.innerHTML = `
+                <div style="background:white; border-radius:16px; padding:30px; width:380px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center; animation:scaleIn 0.25s ease-out;" onclick="event.stopPropagation()">
+                    <div style="margin-bottom:20px;">
+                        <i class="fi fi-rr-calendar-check" style="font-size:42px; color:#10b981;"></i>
+                    </div>
+                    <h3 style="margin:0 0 8px 0; font-size:20px; color:#1e293b; font-weight:700;">Activate Script</h3>
+                    <p style="margin:0 0 20px 0; color:#64748b; font-size:13px;">Pilih Tanggal Mulai Berlaku (Start Date)</p>
+                    
+                    <div style="text-align:left; margin-bottom:24px;">
+                        <input type="date" id="activate-date-input" value="${defaultDate}" 
+                               style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:10px; font-size:15px; font-family:inherit; color:#334155; background:#f8fafc; box-sizing:border-box; outline:none; transition:border-color 0.2s;"
+                               onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+                        <div id="activate-date-error" style="color:#ef4444; font-size:12px; margin-top:6px; display:none;">⚠️ Tanggal harus diisi!</div>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <button onclick="closeActivateModal()" 
+                                style="background:#f1f5f9; color:#64748b; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s;"
+                                onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            Batal
+                        </button>
+                        <button onclick="confirmActivate(${requestId})" 
+                                style="background:#10b981; color:white; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;"
+                                onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                            <i class="fi fi-rr-check" style="font-size:13px;"></i> Activate
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Close on backdrop click
+            overlay.addEventListener('click', closeActivateModal);
+            document.body.appendChild(overlay);
+            
+            // Focus the date input
+            setTimeout(() => document.getElementById('activate-date-input').focus(), 100);
+            
         } else {
-            if (confirm(`Are you sure you want to ${action.toLowerCase()} this script?`)) {
-                performToggle(requestId, newStatus);
-            }
+            // DEACTIVATE: Custom styled confirm modal
+            const overlay = document.createElement('div');
+            overlay.id = 'activate-modal-overlay';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center;';
+            
+            overlay.innerHTML = `
+                <div style="background:white; border-radius:16px; padding:30px; width:380px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center;" onclick="event.stopPropagation()">
+                    <div style="margin-bottom:20px;">
+                        <i class="fi fi-rr-cross-circle" style="font-size:42px; color:#ef4444;"></i>
+                    </div>
+                    <h3 style="margin:0 0 8px 0; font-size:20px; color:#1e293b; font-weight:700;">Deactivate Script?</h3>
+                    <p style="margin:0 0 24px 0; color:#64748b; font-size:13px; line-height:1.5;">Script akan menjadi tidak aktif dan tidak tampil di pencarian Library.</p>
+                    
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <button onclick="closeActivateModal()" 
+                                style="background:#f1f5f9; color:#64748b; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s;"
+                                onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            Batal
+                        </button>
+                        <button onclick="closeActivateModal(); performToggle(${requestId}, 0, null);" 
+                                style="background:#ef4444; color:white; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;"
+                                onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                            <i class="fi fi-rr-cross-circle" style="font-size:13px;"></i> Deactivate
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            overlay.addEventListener('click', closeActivateModal);
+            document.body.appendChild(overlay);
         }
     }
+    
+    function closeActivateModal() {
+        const overlay = document.getElementById('activate-modal-overlay');
+        if (overlay) overlay.remove();
+    }
+    
+    function confirmActivate(requestId) {
+        const dateInput = document.getElementById('activate-date-input');
+        const errorDiv = document.getElementById('activate-date-error');
+        
+        if (!dateInput.value) {
+            errorDiv.style.display = 'block';
+            dateInput.style.borderColor = '#ef4444';
+            return;
+        }
+        
+        closeActivateModal();
+        performToggle(requestId, 1, dateInput.value);
+    }
 
-    async function performToggle(requestId, newStatus) {
+    async function performToggle(requestId, newStatus, startDate) {
         try {
+            const body = { request_id: requestId, is_active: newStatus };
+            if (startDate) body.start_date = startDate;
+            
             const res = await fetch('index.php?controller=request&action=toggle_active', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ request_id: requestId, is_active: newStatus })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
             
             if (data.success) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire('Success', 'Script status updated successfully.', 'success').then(() => location.reload());
-                } else {
-                    alert('Success! Script status updated.');
-                    location.reload();
-                }
+                const msg = newStatus ? 'Script berhasil diaktifkan!' : 'Script berhasil dinonaktifkan.';
+                
+                // Show Custom Success Modal
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center; animation:fadeIn 0.2s;';
+                
+                overlay.innerHTML = `
+                    <div style="background:white; border-radius:16px; padding:30px; width:340px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center; animation:scaleIn 0.25s ease-out;">
+                        <div style="margin-bottom:20px;">
+                            <i class="fi fi-rr-check-circle" style="font-size:48px; color:#10b981;"></i>
+                        </div>
+                        <h3 style="margin:0 0 10px 0; font-size:20px; color:#1e293b; font-weight:700;">Sukses!</h3>
+                        <p style="margin:0 0 24px 0; color:#64748b; font-size:14px;">${msg}</p>
+                        <button onclick="location.reload()" 
+                                style="background:#10b981; color:white; border:none; padding:10px 30px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s; width:100%;"
+                                onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                            OK
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                
             } else {
                 alert('Failed: ' + (data.error || 'Unknown error'));
             }
