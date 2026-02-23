@@ -108,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
   
   if ($stmt && db_has_rows($stmt)) {
     $user = db_fetch_array($stmt, DB_FETCH_ASSOC);
+    $user = array_change_key_case($user, CASE_UPPER); // Normalize column keys for case-insensitive access
     
     $loginSuccess = false;
 

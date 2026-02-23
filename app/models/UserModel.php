@@ -22,6 +22,7 @@ class UserModel {
         $users = [];
         if ($stmt) {
             while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $row = array_change_key_case($row, CASE_UPPER); // Normalize column keys
                 // Normalize for App Usage
                 $row['group_name'] = $row['GROUP'] ?? '';
                 $row['is_active'] = $row['AKTIF'] ?? 1;
@@ -35,6 +36,7 @@ class UserModel {
         $sql = "SELECT * FROM tbluser WHERE USERID = ?";
         $stmt = db_query($this->conn, $sql, [$id]);
         if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+             $row = array_change_key_case($row, CASE_UPPER); // Normalize column keys
              // Normalize for App Usage
              $row['group_name'] = $row['GROUP'] ?? '';
              $row['is_active'] = $row['AKTIF'] ?? 1;

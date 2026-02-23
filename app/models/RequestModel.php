@@ -1402,6 +1402,7 @@ class RequestModel {
             $sql = "SELECT FULLNAME FROM tbluser WHERE USERID = ?";
             $stmt = db_query($this->conn, $sql, [$userId]);
             if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $row = array_change_key_case($row, CASE_UPPER); // Normalize column keys
                 $userCache[$userId] = $row['FULLNAME'] ?? $userId;
             } else {
                 $userCache[$userId] = $userId; // fallback to USERID

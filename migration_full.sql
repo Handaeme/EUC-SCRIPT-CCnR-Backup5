@@ -21,13 +21,6 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[tbluser]') AND type in (N'U'))
 BEGIN
     PRINT 'Table tbluser Exists - Adapting Schema'
-    
-    -- Check & Add ROLE_CODE if missing
-    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbluser]') AND name = 'ROLE_CODE')
-    BEGIN
-        ALTER TABLE tbluser ADD ROLE_CODE VARCHAR(20)
-        PRINT 'Added ROLE_CODE column'
-    END
 
     -- Check for LDAP column
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbluser]') AND name = 'LDAP')
