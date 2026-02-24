@@ -355,7 +355,7 @@ function downloadContentAsExcel() {
         </div>
 
         <!-- ACTION BUTTONS AREA -->
-        <div style="display:flex; gap:10px; align-items:center;">
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             
             <!-- REUSE / REVISE ACTION AREA -->
             <?php if (isset($_SESSION['user']['dept']) && $_SESSION['user']['dept'] === 'MAKER'): ?>
@@ -375,18 +375,16 @@ function downloadContentAsExcel() {
                      <?php echo $isAct ? 'Deactivate Script' : 'Activate Script'; ?>
                  </button>
             <?php endif; ?>
+
+            <!-- SPECIAL PROCEDURE REVISION ENTRY POINT -->
+            <?php if (isset($_SESSION['user']['dept']) && ($_SESSION['user']['dept'] === 'PROCEDURE' || $_SESSION['user']['dept'] === 'CPMS')): ?>
+                 <a href="?controller=request&action=review_library_script&id=<?php echo $request['id']; ?>" style="background:#7c3aed; color:white; padding:8px 16px; border:none; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; text-decoration:none; height:36px; box-sizing:border-box;">
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                     Review / Revisi Script
+                 </a>
+            <?php endif; ?>
             
         </div>
-
-        <!-- SPECIAL PROCEDURE REVISION ENTRY POINT -->
-        <?php if (isset($_SESSION['user']['dept']) && ($_SESSION['user']['dept'] === 'PROCEDURE' || $_SESSION['user']['dept'] === 'CPMS')): ?>
-        <div style="display:flex; gap:10px;">
-             <a href="?controller=request&action=review_library_script&id=<?php echo $request['id']; ?>" style="background:#7c3aed; color:white; padding:8px 16px; border:none; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; text-decoration:none;">
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                 Review / Revisi Script
-             </a>
-        </div>
-        <?php endif; ?>
     </div>
 
     <!-- REUSE MODAL -->
