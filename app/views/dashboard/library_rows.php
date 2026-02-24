@@ -26,8 +26,11 @@
                        $td = new DateTime($sqlServerToday ?? 'today');
                        $td->setTime(0,0,0);
                        
-                       $st = ($item['start_date'] instanceof DateTime) ? clone $item['start_date'] : new DateTime($item['start_date']);
+                       // Handle both string or DateTime object from database driver
+                       $dbDate = $item['start_date'];
+                       $st = ($dbDate instanceof DateTime) ? clone $dbDate : new DateTime($dbDate);
                        $st->setTime(0,0,0);
+                       
                        if ($st > $td) $isSched = true;
                    }
                 ?>
