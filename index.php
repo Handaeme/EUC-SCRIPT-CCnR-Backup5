@@ -249,8 +249,52 @@ function log_message($message) {
   file_put_contents($logFile, $logEntry, FILE_APPEND);
 }
 
+// --- SSO SESSION MAPPING ---
+// If SSO is active, the main portal stores data in the root of $_SESSION (e.g., $_SESSION['NIK'])
+// EUC-Script expects this data to be inside $_SESSION['user']. We map it here automatically.
+if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['userid'])) {
+    $jobFunc = strtoupper(trim($_SESSION['JOB_FUNCTION'] ?? ''));
+    $dept    = strtoupper(trim($_SESSION['DEPT'] ?? ''));
+    $divisi  = trim($_SESSION['DIVISI'] ?? '');
+
+    // Determine Role using the exact same logic as local login
+    if ($jobFunc === 'DEPARTMENT HEAD') {
+        $derivedRole = 'MAKER';
+        $roleLabel = 'DEPARTMENT HEAD';
+    } elseif ($jobFunc === 'DIVISION HEAD') {
+        $derivedRole = 'SPV';
+        $roleLabel = 'DIVISION HEAD';
+    } elseif ($dept === 'PIC') {
+        $derivedRole = 'PIC';
+        $roleLabel = 'Coordinator Script';
+    } elseif (stripos($divisi, 'Quality Analysis Monitoring') !== false || $dept === 'PROCEDURE' || stripos($_SESSION['JOB_FUNCTION'] ?? '', 'ADMIN SUPPORT') !== false) {
+        $derivedRole = 'PROCEDURE';
+        $groupName = $_SESSION['GROUP'] ?? '';
+        $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
+    } elseif ($dept === 'ADMIN' || (isset($_SESSION['isAdmin']) && $_SESSION['isAdmin'] == 1)) {
+        $derivedRole = 'ADMIN';
+        $roleLabel = 'ADMIN';
+    } else {
+        $derivedRole = 'MAKER'; // fallback
+        $roleLabel = $jobFunc ?: $dept ?: 'USER';
+    }
+
+    // Build the array expected by EUC-Script
+    $_SESSION['user'] = [
+        'userid' => $_SESSION['NIK'], 
+        'fullname' => $_SESSION['USER_NAME'] ?? $_SESSION['NAMA'] ?? $_SESSION['NIK'], // Try to find a name, fallback to NIK
+        'dept' => $derivedRole,           
+        'role_label' => $roleLabel,       
+        'job_function' => $_SESSION['JOB_FUNCTION'] ?? '',
+        'divisi' => $_SESSION['DIVISI'] ?? '',
+        'group_name' => $_SESSION['GROUP'] ?? '',
+        'ldap' => 1 // Assume LDAP if coming from main portal
+    ];
+}
+
+
 // --- FALLBACK DASHBOARD (Role Based) ---
-if (isset($_SESSION['user'])) {
+if (isset($_SESSION['user']) && isset($_SESSION['user']['dept'])) {
   $dashboard = new App\Controllers\DashboardController();
   $dashboard->index();
 } else {
