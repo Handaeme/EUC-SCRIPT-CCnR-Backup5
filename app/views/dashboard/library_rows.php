@@ -23,10 +23,11 @@
                    $isActive = (int)($item['is_active'] ?? 0); 
                    $isSched = false;
                    if ($isActive && !empty($item['start_date'])) {
-                       $td = new DateTime($sqlServerToday ?? 'today');
+                       // Handle both string or DateTime object from database driver
+                       $todayVal = $sqlServerToday ?? 'today';
+                       $td = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime($todayVal);
                        $td->setTime(0,0,0);
                        
-                       // Handle both string or DateTime object from database driver
                        $dbDate = $item['start_date'];
                        $st = ($dbDate instanceof DateTime) ? clone $dbDate : new DateTime($dbDate);
                        $st->setTime(0,0,0);
