@@ -270,7 +270,7 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
         $derivedRole = 'PROCEDURE';
         $groupName = $_SESSION['GROUP'] ?? '';
         $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
-    } elseif ($dept === 'ADMIN' || (isset($_SESSION['isAdmin']) && $_SESSION['isAdmin'] == 1)) {
+    } elseif ($dept === 'ADMIN') {
         $derivedRole = 'ADMIN';
         $roleLabel = 'ADMIN';
     } else {
