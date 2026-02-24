@@ -324,7 +324,8 @@ function downloadContentAsExcel() {
                             // Cek apakah statusnya Scheduled (Telah diaktifkan, tapi Start Date masih besok/lusa)
                             $isScheduled = false;
                             if ($isActive && !empty($startDate)) {
-                                $todayDate = new DateTime($sqlServerToday ?? 'today');
+                                $todayVal = $sqlServerToday ?? 'today';
+                                $todayDate = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime($todayVal);
                                 $todayDate->setTime(0, 0, 0);
                                 
                                 $startDt = ($startDate instanceof DateTime) ? clone $startDate : new DateTime($startDate);
