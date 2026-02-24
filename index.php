@@ -21,7 +21,7 @@ App\Helpers\EnvLoader::load(__DIR__ . '/.env');
 
 // 1. Set ini ke TRUE saat sudah terintegrasi penuh dengan portal utama.
 // Jika TRUE: Form login bawaan akan disembunyikan, dan user akan dialihkan ke PORTAL_LOGIN_URL.
-$USE_PORTAL_SSO = false; 
+$USE_PORTAL_SSO = true; 
 
 // 2. URL Login Utama (Tempat user di-redirect jika belum login)
 // Sesuaikan IP/Domain dengan environment Production Anda.
@@ -80,6 +80,17 @@ if (!$conn) {
     die("Database Connection Failed<br><small>" . print_r(db_errors(), true) . "</small><br>Please ensure SQL Server is running and config/database.php is correct.");
 }
 
+// Logout Logic (MUST be before Router to catch all ?action=logout regardless of controller)
+if (isset($_GET['action']) && $_GET['action'] == 'logout') {
+  session_destroy();
+  if ($USE_PORTAL_SSO) {
+      header("Location: " . $PORTAL_LOGOUT_URL);
+  } else {
+      header("Location: index.php");
+  }
+  exit;
+}
+
 // Router
 $controllerName = isset($_GET['controller']) ? $_GET['controller'] : 'Home';
 $methodName = isset($_GET['action']) ? $_GET['action'] : 'index';
@@ -102,18 +113,6 @@ if (class_exists($controllerClass)) {
 }
 
 // --- FALLBACK DASHBOARD (Existing Code) ---
-
-
-// Logout Logic
-if (isset($_GET['action']) && $_GET['action'] == 'logout') {
-  session_destroy();
-  if ($USE_PORTAL_SSO) {
-      header("Location: " . $PORTAL_LOGOUT_URL);
-  } else {
-      header("Location: index.php");
-  }
-  exit;
-}
 
 // Login Logic
 // Login Logic
