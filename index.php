@@ -266,7 +266,7 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
     } elseif ($dept === 'PIC') {
         $derivedRole = 'PIC';
         $roleLabel = 'Coordinator Script';
-    } elseif (stripos($divisi, 'Quality Analysis Monitoring') !== false || $dept === 'PROCEDURE' || stripos($_SESSION['JOB_FUNCTION'] ?? '', 'ADMIN SUPPORT') !== false) {
+    } elseif (stripos($divisi, 'Quality Analysis Monitoring') !== false || $dept === 'PROCEDURE') {
         $derivedRole = 'PROCEDURE';
         $groupName = $_SESSION['GROUP'] ?? '';
         $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
