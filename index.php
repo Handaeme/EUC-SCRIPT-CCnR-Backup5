@@ -274,8 +274,8 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
         $derivedRole = 'ADMIN';
         $roleLabel = 'ADMIN';
     } else {
-        $derivedRole = 'MAKER'; // fallback
-        $roleLabel = $jobFunc ?: $dept ?: 'USER';
+        $derivedRole = 'VIEWER'; // fallback for unrecognized roles
+        $roleLabel = 'GUEST / VIEWER';
     }
 
     // Build the array expected by EUC-Script

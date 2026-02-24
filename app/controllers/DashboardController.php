@@ -31,9 +31,14 @@ class DashboardController extends Controller {
                 $this->procedure();
                 break;
             case 'MAKER':
-            default:
                 // MAKER default landing = Create New Request
                 header("Location: ?controller=request&action=create");
+                exit;
+                break;
+            case 'VIEWER':
+            default:
+                // Unrecognized users or explicit VIEWERS go to Library to look around
+                header("Location: ?controller=dashboard&action=library");
                 exit;
                 break;
         }
