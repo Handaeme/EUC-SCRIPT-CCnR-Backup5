@@ -1247,13 +1247,44 @@ class RequestModel {
     }
 
     public function getReviewDocuments($requestId) {
-        // Get review documents for a request
-        $sql = "SELECT * FROM script_files WHERE request_id = ? AND file_type IN ('LEGAL', 'CX', 'LEGAL_SYARIAH', 'LPP')";
-        $stmt = db_query($this->conn, $sql, [$requestId]);
+        // [FIX] Get review documents for the ENTIRE script family (Inheritance for Revisions)
+        // 1. First, get the script number for this Request ID
+        $sqlRequest = "SELECT script_number FROM script_request WHERE id = ?";
+        $stmtRequest = db_query($this->conn, $sqlRequest, [$requestId]);
+        if (!$stmtRequest || !($reqRow = db_fetch_array($stmtRequest, DB_FETCH_ASSOC))) {
+            return []; // Request not found
+        }
+        
+        $scriptNumber = $reqRow['script_number'];
+        $baseExact = $scriptNumber;
+        
+        // 2. Determine the Base Script Number (Strip version suffix like -01, -02 if present)
+        // Format: ...-XXXX (Serial 4 digit) | ...-XXXX-VV (Version 2 digit)
+        if (preg_match('/-(\d{2})$/', $scriptNumber)) {
+            $baseExact = preg_replace('/-(\d{2})$/', '', $scriptNumber);
+        }
+        $basePattern = $baseExact . '-%';
+
+        // 3. Query all files belonging to this request OR any request in its family
+        $sql = "SELECT f.*
+                FROM script_files f
+                INNER JOIN script_request r ON f.request_id = r.id
+                WHERE (r.script_number = ? OR r.script_number LIKE ?)
+                  AND f.file_type IN ('LEGAL', 'CX', 'LEGAL_SYARIAH', 'LPP')
+                ORDER BY f.id DESC";
+                  
+        $stmt = db_query($this->conn, $sql, [$baseExact, $basePattern]);
         $rows = [];
         if ($stmt) {
+            // Deduplicate by original_filename to prevent showing the same file twice
+            // if it was somehow re-attached or duplicated in history
+            $seenFiles = [];
             while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
-                $rows[] = $row;
+                $key = $row['file_type'] . '_' . $row['original_filename'];
+                if (!isset($seenFiles[$key])) {
+                    $rows[] = $row;
+                    $seenFiles[$key] = true;
+                }
             }
         }
         return $rows;

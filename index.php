@@ -14,6 +14,24 @@ $request = $_SERVER['REQUEST_URI'];
 require_once __DIR__ . '/app/helpers/EnvLoader.php';
 App\Helpers\EnvLoader::load(__DIR__ . '/.env');
 
+// =========================================================================
+// [PRODUCTION INTEGRATION CONFIGURATION]
+// Use these settings when moving the application to the main CITRA Portal.
+// =========================================================================
+
+// 1. Set ini ke TRUE saat sudah terintegrasi penuh dengan portal utama.
+// Jika TRUE: Form login bawaan akan disembunyikan, dan user akan dialihkan ke PORTAL_LOGIN_URL.
+$USE_PORTAL_SSO = false; 
+
+// 2. URL Login Utama (Tempat user di-redirect jika belum login)
+// Sesuaikan IP/Domain dengan environment Production Anda.
+$PORTAL_LOGIN_URL = 'http://172.17.37.172/CITRASF/index.php';
+
+// 3. URL Logout Utama (Tempat user di-redirect setelah klik Logout)
+$PORTAL_LOGOUT_URL = 'http://172.17.37.172/CITRASF/logout.php'; // Ganti dng URL logout citra yg sebenarnya
+
+// =========================================================================
+
 // DB ADAPTER: Load this BEFORE any database usage/checks
 require_once __DIR__ . '/app/helpers/DbAdapter.php';
 
@@ -89,7 +107,11 @@ if (class_exists($controllerClass)) {
 // Logout Logic
 if (isset($_GET['action']) && $_GET['action'] == 'logout') {
   session_destroy();
-  header("Location: index.php");
+  if ($USE_PORTAL_SSO) {
+      header("Location: " . $PORTAL_LOGOUT_URL);
+  } else {
+      header("Location: index.php");
+  }
   exit;
 }
 
@@ -232,7 +254,14 @@ if (isset($_SESSION['user'])) {
   $dashboard = new App\Controllers\DashboardController();
   $dashboard->index();
 } else {
-  // LOGIN PAGE
+  // JIKA BELUM LOGIN:
+  if ($USE_PORTAL_SSO) {
+      // Production Mode: Redirect ke portal utama CITRA
+      header("Location: " . $PORTAL_LOGIN_URL);
+      exit;
+  }
+  
+  // Standalone Mode: Tampilkan halaman LOGIN PAGE bawaan
   ?>
 <!DOCTYPE html>
 <html>
