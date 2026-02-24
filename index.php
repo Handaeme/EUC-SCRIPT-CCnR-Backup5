@@ -25,10 +25,10 @@ $USE_PORTAL_SSO = false;
 
 // 2. URL Login Utama (Tempat user di-redirect jika belum login)
 // Sesuaikan IP/Domain dengan environment Production Anda.
-$PORTAL_LOGIN_URL = 'http://172.17.37.172/CITRASF/index.php';
+ $PORTAL_LOGIN_URL = 'http://172.17.37.172/CITRASF/index.php';
 
 // 3. URL Logout Utama (Tempat user di-redirect setelah klik Logout)
-$PORTAL_LOGOUT_URL = 'http://172.17.37.172/CITRASF/logout.php'; // Ganti dng URL logout citra yg sebenarnya
+$PORTAL_LOGOUT_URL = 'http://172.17.37.172/CITRASF/logout.php';// Ganti dng URL logout citra yg sebenarnya
 
 // =========================================================================
 
