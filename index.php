@@ -21,14 +21,14 @@ App\Helpers\EnvLoader::load(__DIR__ . '/.env');
 
 // 1. Set ini ke TRUE saat sudah terintegrasi penuh dengan portal utama.
 // Jika TRUE: Form login bawaan akan disembunyikan, dan user akan dialihkan ke PORTAL_LOGIN_URL.
-$USE_PORTAL_SSO = true; 
+$USE_PORTAL_SSO = false; 
 
 // 2. URL Login Utama (Tempat user di-redirect jika belum login)
 // Sesuaikan IP/Domain dengan environment Production Anda.
  $PORTAL_LOGIN_URL = 'http://172.17.37.172/CITRASF/index.php';
 
 // 3. URL Logout Utama (Tempat user di-redirect setelah klik Logout)
-$PORTAL_LOGOUT_URL = 'http://172.17.37.172/CITRASF/logout.php';// Ganti dng URL logout citra yg sebenarnya
+$PORTAL_LOGOUT_URL = 'http://172.17.37.172/CITRASF/login.php';// Ganti dng URL logout citra yg sebenarnya
 
 // =========================================================================
 

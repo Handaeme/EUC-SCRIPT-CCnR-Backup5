@@ -69,7 +69,7 @@
                     <span style="background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:auto; font-weight:bold;"><?php echo $badgeCount; ?></span>
                 <?php endif; ?>
             </a>
-        <?php else: ?>
+        <?php elseif ($role !== 'VIEWER'): ?>
             <!-- Non-MAKER: Dashboard/Approval link -->
             <a href="index.php" class="menu-item <?php echo isActive('dashboard', 'index'); ?>">
                 <i class="fi fi-rr-apps"></i>

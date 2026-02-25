@@ -292,8 +292,8 @@ class DashboardController extends Controller {
         // NOTE: In this app, ROLE is stored in 'dept' session key (derived on login)
         $userRole = $_SESSION['user']['dept'] ?? 'USER';
         
-        // Assume 'USER' is Agent/Viewer. All others have higher privileges.
-        $showInactive = ($userRole !== 'USER'); 
+        // Assume 'USER' or 'VIEWER' is Agent/Viewer. All others have higher privileges.
+        $showInactive = !in_array($userRole, ['USER', 'VIEWER']);
         
         // Use the aggregated fetcher (same as Export) to handle Duplicates & Content formatting consistently
         $allLibraryItems = $reqModel->getLibraryItemsWithContent($startDate, $endDate, $sortPublished, $filters, $showInactive, $sortBy, $dateType, $search);
