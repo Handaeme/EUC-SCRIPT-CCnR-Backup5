@@ -115,7 +115,58 @@ if (isset($content['versions']) && !empty($content['versions'])):
                <div class="version-content-wrapper" style="padding:20px; overflow-x:auto;">
                    <!-- Wrapper for Excel/Table Content -->
                    <div class="audit-content-display" style="font-family:'Inter', system-ui, -apple-system, sans-serif; font-size:13px;">
-                       <?php echo $version['content']; ?>
+                       <?php 
+                       $vContent = $version['content'];
+                       // FIX: Deduplicate sheet panes if pre-built tabs are present
+                       if (strpos($vContent, 'sheet-tabs-nav') !== false) {
+                           $vDom = new \DOMDocument();
+                           libxml_use_internal_errors(true);
+                           $vDom->loadHTML('<?xml encoding="utf-8" ?><div id="__vwrap__">' . $vContent . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                           libxml_clear_errors();
+                           $vXpath = new \DOMXPath($vDom);
+                           
+                           // Remove duplicate nav containers (keep only first)
+                           $vNavs = $vXpath->query("//*[contains(@class, 'sheet-tabs-nav')]");
+                           if ($vNavs->length > 0) {
+                               $firstNav = $vNavs->item(0);
+                               for ($ni = $vNavs->length - 1; $ni > 0; $ni--) {
+                                   $dupNav = $vNavs->item($ni);
+                                   $dupNav->parentNode->removeChild($dupNav);
+                               }
+                               
+                               // Deduplicate buttons within first nav
+                               $vBtns = $vXpath->query(".//*[contains(@class, 'btn-sheet')]", $firstNav);
+                               $vSeen = []; $vKeepIds = []; $vRemBtns = [];
+                               foreach ($vBtns as $vBtn) {
+                                   $vName = trim($vBtn->textContent);
+                                   preg_match("/['\"]([^'\"]+)['\"]/", $vBtn->getAttribute('onclick'), $vM);
+                                   $vTid = $vM[1] ?? '';
+                                   if (in_array($vName, $vSeen)) {
+                                       $vRemBtns[] = $vBtn;
+                                       if ($vTid) { $vPane = $vDom->getElementById($vTid); if ($vPane) $vPane->parentNode->removeChild($vPane); }
+                                   } else {
+                                       $vSeen[] = $vName;
+                                       if ($vTid) $vKeepIds[] = $vTid;
+                                   }
+                               }
+                               foreach ($vRemBtns as $vRb) { $vRb->parentNode->removeChild($vRb); }
+                               
+                               // Remove orphaned panes
+                               $vAllPanes = $vXpath->query("//*[contains(@class, 'sheet-pane') or contains(@class, 'media-pane')]");
+                               foreach ($vAllPanes as $vAp) {
+                                   $vApId = $vAp->getAttribute('id');
+                                   if ($vApId && !in_array($vApId, $vKeepIds)) { $vAp->parentNode->removeChild($vAp); }
+                               }
+                           }
+                           
+                           $vClean = $vDom->saveHTML();
+                           $vClean = str_replace('<?xml encoding="utf-8" ?>', '', $vClean);
+                           $vClean = preg_replace('/^<div id="__vwrap__">(.*)<\/div>$/s', '$1', trim($vClean));
+                           echo $vClean;
+                       } else {
+                           echo $vContent;
+                       }
+                       ?>
                    </div>
                </div>
             </div>

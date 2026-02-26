@@ -16,32 +16,34 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </a>
             <?php endif; ?>
-            
-            <?php if (!empty($canManage)): ?>
-            <div style="margin-top:5px;">
-                <?php 
-                   $isActive = (int)($item['is_active'] ?? 0); 
-                   $isSched = false;
-                   if ($isActive && !empty($item['start_date'])) {
-                       // Handle both string or DateTime object from database driver
-                       $todayVal = $sqlServerToday ?? 'today';
-                       $td = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime($todayVal);
-                       $td->setTime(0,0,0);
-                       
-                       $dbDate = $item['start_date'];
-                       $st = ($dbDate instanceof DateTime) ? clone $dbDate : new DateTime($dbDate);
-                       $st->setTime(0,0,0);
-                       
-                       if ($st > $td) $isSched = true;
-                   }
-                ?>
-                <button onclick="toggleActivation(<?php echo $item['request_id']; ?>, <?php echo $isActive; ?>)" 
-                        style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:4px; border:1px solid <?php echo !$isActive ? '#cbd5e1' : ($isSched ? '#fcd34d' : '#16a34a'); ?>; background:<?php echo !$isActive ? '#f8fafc' : ($isSched ? '#fffbeb' : '#f0fdf4'); ?>; color:<?php echo !$isActive ? '#64748b' : ($isSched ? '#d97706' : '#15803d'); ?>; border-radius:6px; padding:4px; font-size:10px; font-weight:600; cursor:pointer;" title="Click to toggle">
-                    <?php echo !$isActive ? 'Inactive' : ($isSched ? '<i class="fi fi-rr-calendar-clock"></i> Sched' : 'Active'); ?>
-                </button>
-            </div>
-            <?php endif; ?>
         </div>
+    </td>
+    <td style="padding:12px; text-align:center; vertical-align:middle; width:1px; white-space:nowrap;">
+        <?php 
+           $isActive = (int)($item['is_active'] ?? 0); 
+           $isSched = false;
+           if ($isActive && !empty($item['start_date'])) {
+               $todayVal = $sqlServerToday ?? 'today';
+               $td = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime($todayVal);
+               $td->setTime(0,0,0);
+               
+               $dbDate = $item['start_date'];
+               $st = ($dbDate instanceof DateTime) ? clone $dbDate : new DateTime($dbDate);
+               $st->setTime(0,0,0);
+               
+               if ($st > $td) $isSched = true;
+           }
+        ?>
+        <?php if (!empty($canManage)): ?>
+            <button onclick="toggleActivation(<?php echo $item['request_id']; ?>, <?php echo $isActive; ?>)" 
+                    style="display:inline-flex; align-items:center; justify-content:center; gap:4px; border:1px solid <?php echo !$isActive ? '#cbd5e1' : ($isSched ? '#fcd34d' : '#16a34a'); ?>; background:<?php echo !$isActive ? '#f8fafc' : ($isSched ? '#fffbeb' : '#f0fdf4'); ?>; color:<?php echo !$isActive ? '#64748b' : ($isSched ? '#d97706' : '#15803d'); ?>; border-radius:6px; padding:6px 10px; font-size:11px; font-weight:600; cursor:pointer;" title="Click to toggle">
+                <?php echo !$isActive ? 'Inactive' : ($isSched ? '<i class="fi fi-rr-calendar-clock" style="margin-right:4px;"></i> Sched' : 'Active'); ?>
+            </button>
+        <?php else: ?>
+            <span style="display:inline-flex; align-items:center; justify-content:center; gap:4px; border:1px solid <?php echo !$isActive ? '#cbd5e1' : ($isSched ? '#fcd34d' : '#16a34a'); ?>; background:<?php echo !$isActive ? '#f8fafc' : ($isSched ? '#fffbeb' : '#f0fdf4'); ?>; color:<?php echo !$isActive ? '#64748b' : ($isSched ? '#d97706' : '#15803d'); ?>; border-radius:6px; padding:6px 10px; font-size:11px; font-weight:600;">
+                <?php echo !$isActive ? 'Inactive' : ($isSched ? '<i class="fi fi-rr-calendar-clock" style="margin-right:4px;"></i> Sched' : 'Active'); ?>
+            </span>
+        <?php endif; ?>
     </td>
     <td style="padding:12px; white-space:nowrap;">
         <div style="font-weight:600; color:var(--primary-red);"><?php 

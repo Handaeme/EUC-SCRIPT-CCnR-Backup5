@@ -573,6 +573,7 @@ class DashboardController extends Controller {
         $input = json_decode(file_get_contents('php://input'), true);
         $requestId = $input['request_id'] ?? null;
         $isActive = $input['is_active'] ?? false; // true/false
+        $startDate = $input['start_date'] ?? null; // Start date for activation
 
         if (!$requestId) {
             echo json_encode(['success' => false, 'message' => 'Missing Request ID']);
@@ -580,12 +581,32 @@ class DashboardController extends Controller {
         }
 
         $reqModel = $this->model('RequestModel');
-        $success = $reqModel->toggleScriptActivation($requestId, $isActive, $user['userid']);
 
-        echo json_encode([
-            'success' => $success, 
-            'message' => $success ? 'Status updated' : 'Failed to update status',
-            'new_state' => $isActive
-        ]);
+    // [VERSION GUARD] Block activation if newer version exists
+    if ($isActive) {
+        $req = $reqModel->getRequestById($requestId);
+        if ($req) {
+            $newer = $reqModel->checkNewerVersionExists($req['script_number']);
+            if ($newer) {
+                echo json_encode([
+                    'success' => false, 
+                    'error' => 'newer_version_exists',
+                    'newer_script' => $newer['script_number'],
+                    'newer_status' => $newer['status'],
+                    'newer_id' => $newer['id'],
+                    'message' => 'Versi lebih baru sudah ada: ' . $newer['script_number']
+                ]);
+                exit;
+            }
+        }
+    }
+
+    $success = $reqModel->toggleScriptActivation($requestId, $isActive, $user['userid'], $startDate);
+
+    echo json_encode([
+        'success' => $success, 
+        'message' => $success ? 'Status updated' : 'Failed to update status',
+        'new_state' => $isActive
+    ]);
     }
 }

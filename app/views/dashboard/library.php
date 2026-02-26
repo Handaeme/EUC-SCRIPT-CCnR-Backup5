@@ -412,7 +412,8 @@ require_once __DIR__ . '/library_helpers.php';
                 <table id="dataTable" class="table" style="width:100%; border-collapse:collapse; font-size:14px;">
                     <thead>
                         <tr style="background:#f9fafb; text-align:left;">
-                            <th style="padding:12px; border-bottom:2px solid #eee; width:100px;">Action</th>
+                            <th style="padding:12px; border-bottom:2px solid #eee; width:1px; white-space:nowrap;">Action</th>
+                            <th style="padding:12px; border-bottom:2px solid #eee; width:1px; white-space:nowrap; text-align:center;">Status</th>
                             <th style="padding:12px; border-bottom:2px solid #eee; white-space:nowrap;">Ticket ID</th>
                             <th style="padding:12px; border-bottom:2px solid #eee; min-width:150px;">Script Number</th>
                             <th style="padding:12px; border-bottom:2px solid #eee; white-space:nowrap;">Jenis</th>
@@ -546,21 +547,137 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Activation Toggle Logic
 function toggleActivation(requestId, currentStatus) {
-    const action = currentStatus ? 'Deactivate' : 'Activate';
-    const confirmMsg = `Are you sure you want to ${action} this script?\n\n` + 
-                       (currentStatus ? "It will be hidden from everyone except Makers/Admins." : "It will be visible to all Agents.");
+    if (!currentStatus) {
+        // ACTIVATE: Show Date Picker Modal
+        const defaultDate = new Date().toISOString().split('T')[0];
+        
+        const overlay = document.createElement('div');
+        overlay.id = 'lib-toggle-modal';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center; animation:fadeIn 0.2s;';
+        
+        overlay.innerHTML = `
+            <div style="background:white; border-radius:16px; padding:30px; width:380px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center;" onclick="event.stopPropagation()">
+                <div style="margin-bottom:20px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+                </div>
+                <h3 style="margin:0 0 8px 0; font-size:20px; color:#1e293b; font-weight:700;">Activate Script</h3>
+                <p style="margin:0 0 20px 0; color:#64748b; font-size:13px;">Pilih Tanggal Mulai Berlaku (Start Date)</p>
+                
+                <div style="text-align:left; margin-bottom:24px;">
+                    <input type="date" id="lib-activate-date" value="${defaultDate}" 
+                           style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:10px; font-size:15px; font-family:inherit; color:#334155; background:#f8fafc; box-sizing:border-box; outline:none; transition:border-color 0.2s;"
+                           onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+                    <div id="lib-activate-error" style="color:#ef4444; font-size:12px; margin-top:6px; display:none;">⚠️ Tanggal harus diisi!</div>
+                </div>
+                
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button onclick="closeLibToggleModal()" 
+                            style="background:#f1f5f9; color:#64748b; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s;"
+                            onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                        Batal
+                    </button>
+                    <button onclick="performLibToggle(${requestId}, true)" 
+                            style="background:#10b981; color:white; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;"
+                            onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        Activate
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        overlay.addEventListener('click', closeLibToggleModal);
+        document.body.appendChild(overlay);
+        setTimeout(() => document.getElementById('lib-activate-date')?.focus(), 100);
+        
+    } else {
+        // DEACTIVATE: Styled Confirm Modal
+        const overlay = document.createElement('div');
+        overlay.id = 'lib-toggle-modal';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center;';
+        
+        overlay.innerHTML = `
+            <div style="background:white; border-radius:16px; padding:30px; width:380px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center;" onclick="event.stopPropagation()">
+                <div style="margin-bottom:20px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <h3 style="margin:0 0 8px 0; font-size:20px; color:#1e293b; font-weight:700;">Deactivate Script?</h3>
+                <p style="margin:0 0 24px 0; color:#64748b; font-size:13px; line-height:1.5;">Script akan menjadi tidak aktif dan tidak tampil di pencarian Library.</p>
+                
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button onclick="closeLibToggleModal()" 
+                            style="background:#f1f5f9; color:#64748b; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s;"
+                            onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                        Batal
+                    </button>
+                    <button onclick="performLibToggle(${requestId}, false)" 
+                            style="background:#ef4444; color:white; border:none; padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;"
+                            onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        Deactivate
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        overlay.addEventListener('click', closeLibToggleModal);
+        document.body.appendChild(overlay);
+    }
+}
+
+function closeLibToggleModal() {
+    const modal = document.getElementById('lib-toggle-modal');
+    if (modal) modal.remove();
+}
+
+function showLibNotification(message, isSuccess) {
+    const overlay = document.createElement('div');
+    overlay.id = 'lib-toggle-modal';
+    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center;';
     
-    if (!confirm(confirmMsg)) return;
+    const color = isSuccess ? '#10b981' : '#ef4444';
+    const icon = isSuccess 
+        ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>'
+        : '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
     
-    // Optimistic UI Update (optional, but let's wait for server)
+    overlay.innerHTML = `
+        <div style="background:white; border-radius:16px; padding:30px; width:340px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center;" onclick="event.stopPropagation()">
+            <div style="margin-bottom:16px;">${icon}</div>
+            <h3 style="margin:0 0 8px 0; font-size:18px; color:#1e293b; font-weight:700;">${isSuccess ? 'Berhasil!' : 'Error'}</h3>
+            <p style="margin:0 0 20px 0; color:#64748b; font-size:13px;">${message}</p>
+            <button onclick="closeLibToggleModal(); ${isSuccess ? 'location.reload();' : ''}" 
+                    style="background:${color}; color:white; border:none; padding:10px 28px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer;">
+                OK
+            </button>
+        </div>
+    `;
+    
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) { closeLibToggleModal(); if (isSuccess) location.reload(); } });
+    document.body.appendChild(overlay);
+}
+
+function performLibToggle(requestId, activate) {
+    closeLibToggleModal();
+    
+    let startDate = null;
+    if (activate) {
+        const dateInput = document.getElementById('lib-activate-date');
+        if (dateInput && !dateInput.value) {
+            const errDiv = document.getElementById('lib-activate-error');
+            if (errDiv) errDiv.style.display = 'block';
+            if (dateInput) dateInput.style.borderColor = '#ef4444';
+            return;
+        }
+        startDate = dateInput ? dateInput.value : null;
+    }
+    
     fetch('?controller=dashboard&action=activateScript', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             request_id: requestId,
-            is_active: !currentStatus
+            is_active: activate,
+            start_date: startDate
         })
     })
     .then(response => {
@@ -569,15 +686,48 @@ function toggleActivation(requestId, currentStatus) {
     })
     .then(data => {
         if (data.success) {
-            alert(`Script ${action}d successfully!`);
-            location.reload(); // Reload to reflect changes (simplest way to update UI/Badges)
+            showLibNotification(activate ? 'Script berhasil diaktifkan!' : 'Script berhasil dinonaktifkan.', true);
+        } else if (data.error === 'newer_version_exists') {
+            // [VERSION GUARD] Show version warning popup
+            const overlay = document.createElement('div');
+            overlay.id = 'version-guard-overlay';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center;';
+            overlay.innerHTML = `
+                <div style="background:white; border-radius:16px; padding:30px; width:380px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center;" onclick="event.stopPropagation()">
+                    <div style="margin-bottom:16px;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <h3 style="margin:0 0 10px 0; font-size:18px; color:#1e293b; font-weight:700;">Versi Lebih Baru Sudah Ada</h3>
+                    <p style="margin:0 0 8px 0; color:#64748b; font-size:13px;">Script ini sudah memiliki versi yang lebih baru:</p>
+                    <div style="background:#fef3c7; border:1px solid #fbbf24; border-radius:8px; padding:10px; margin:0 0 16px 0;">
+                        <div style="font-weight:700; color:#92400e; font-size:14px;">\u2192 ${data.newer_script}</div>
+                        <div style="color:#a16207; font-size:12px; margin-top:4px;">Status: ${data.newer_status}</div>
+                    </div>
+                    <p style="margin:0 0 20px 0; color:#64748b; font-size:12px;">Silakan gunakan versi terbaru untuk melakukan perubahan.</p>
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <button onclick="document.getElementById('version-guard-overlay').remove()" 
+                                style="background:#f1f5f9; color:#64748b; border:none; padding:10px 20px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;"
+                                onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            Tutup
+                        </button>
+                        <button onclick="window.location.href='?controller=audit&action=detail&id=${data.newer_id}'" 
+                                style="background:#f59e0b; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"
+                                onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Lihat di Audit Trail
+                        </button>
+                    </div>
+                </div>
+            `;
+            overlay.addEventListener('click', function(e) { if (e.target === overlay) document.getElementById('version-guard-overlay').remove(); });
+            document.body.appendChild(overlay);
         } else {
-            alert('Error: ' + (data.message || 'Unknown error'));
+            showLibNotification(data.message || 'Gagal mengubah status.', false);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Failed to update status. Please try again.');
+        showLibNotification('Gagal terhubung ke server. Silakan coba lagi.', false);
     });
 }
 // Sorting Logic for Library Table

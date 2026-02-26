@@ -5,7 +5,7 @@ require_once 'app/views/layouts/sidebar.php';
 <!-- SheetJS with Style Support for Excel Export (Red Font for Revisions) -->
 <!-- SheetJS with Style Support for Excel Export (Red Font for Revisions) -->
 <!-- We must use xlsx-js-style directly because standard xlsx.full.min.js does not support styling -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="public/js/xlsx.bundle.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';"></script>
 
 <?php
 $req = $data['request'];
@@ -304,11 +304,31 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #f0f0f0; padding-bottom:10px;">
                     <h4 style="margin:0; color:#444; font-size:15px; font-weight:700;">Script Content</h4>
                     
-                    <!-- EXPORT EXCEL BUTTON -->
-                    <button onclick="downloadAuditExcel()" style="background:#0f766e; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background 0.2s;">
+                    <!-- EXPORT EXCEL BUTTON (Server-Side: Per-Reviewer Breakdown) -->
+                    <?php 
+                    $totalVers = !empty($content['versions']) ? count($content['versions']) : 0;
+                    $latestVerNum = $totalVers; // Default to latest version
+                    ?>
+                    <a id="exportExcelBtn" href="?controller=audit&action=exportDetail&id=<?php echo $req['id']; ?>&ver=<?php echo $latestVerNum; ?>" style="background:#0f766e; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background 0.2s; text-decoration:none;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export Excel
-                    </button>
+                    </a>
+                    <script>
+                    // Update Export button when version tab is switched
+                    (function() {
+                        const origSwitchVersion = window.switchVersion;
+                        window.switchVersion = function(idx) {
+                            if (origSwitchVersion) origSwitchVersion(idx);
+                            // Update export link with selected version number (idx is 0-based, ver is 1-based)
+                            const btn = document.getElementById('exportExcelBtn');
+                            if (btn) {
+                                const url = new URL(btn.href);
+                                url.searchParams.set('ver', idx + 1);
+                                btn.href = url.toString();
+                            }
+                        };
+                    })();
+                    </script>
                 </div>
                 
                 <?php if (($req['mode'] ?? '') === 'FILE_UPLOAD'): ?>
@@ -418,63 +438,7 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                     Review Notes
                     <span style="font-size:11px; color:#ef4444; background:#fef2f2; padding:2px 8px; border-radius:12px; margin-left:8px; border:1px solid #fecaca;">Action Required</span>
                 </h4>
-                <div id="general-remarks">
-                    <?php 
-                    $hasGeneralRemarks = false;
-                    foreach ($logs as $log) {
-                        // Filter for relevant remarks
-                        // Skip system/auto logs unless they have custom text
-                        $action = $log['action'] ?? '';
-                        $detail = $log['details'] ?? '';
-                        
-                        // Heuristic: If detail is empty or just "Approved by...", skip. 
-                        // We want ACTUAL remarks.
-                        // But wait, user wants "ALL", so maybe show everything that isn't a pure status change?
-                        // Let's show filtered key events: REJECTED, REVISION, or specific text length > 20?
-                        // Better: Show all REJECT/REVISE events + Approvals if they have notes (future proof)
-                        // [UPDATE] Added DELETED/CANCELLED for completeness
-                        
-                        $isKeyAction = in_array($action, ['REJECTED', 'REVISION', 'MINOR_REVISION', 'MAJOR_REVISION', 'DELETED', 'CANCELLED']);
-                        $isCustomNote = (strpos($detail, 'Approved by') === false && strpos($detail, 'Published to') === false && strpos($detail, 'Submitted by') === false);
-                        
-                        // Strict filter: Show if key action OR (Approved AND custom note)
-                        // Actually, let's just show REJECT/REVISION for now as they are the most critical "NOTES"
-                        // And if we enable approval notes later, they will pass the check if we rely on $detail content
-                        
-                        if ($isKeyAction || ($isCustomNote && !empty($detail))) {
-                            $hasGeneralRemarks = true;
-                            $rColor = '#64748b'; // Default
-                            $rBg = '#f8fafc';
-                            if (strpos($action, 'REJECT') !== false) { $rColor = '#dc2626'; $rBg = '#fef2f2'; }
-                            if (strpos($action, 'REVISE') !== false || strpos($action, 'REVISION') !== false) { $rColor = '#d97706'; $rBg = '#fffbeb'; }
-                            if (strpos($action, 'DELETE') !== false || strpos($action, 'CANCEL') !== false) { $rColor = '#ef4444'; $rBg = '#fef2f2'; }
-                            
-                            $uRole = $log['user_role'] ?? 'SYSTEM';
-                            $uName = $log['full_name'] ?? $log['user_id'];
-                            $dTime = ($log['created_at'] instanceof DateTime) ? $log['created_at']->format('d M H:i') : date('d M H:i', strtotime($log['created_at']));
-                            
-                            echo '<div style="margin-bottom:12px; border-left:3px solid '.$rColor.'; padding-left:10px;">';
-                            
-                            // Action Type Badge
-                            $badgeLabel = 'Note';
-                            $badgeBg = '#e2e8f0'; $badgeColor = '#475569';
-                            if (strpos($action, 'REJECT') !== false) { $badgeLabel = 'REJECTED'; $badgeBg = '#fef2f2'; $badgeColor = '#dc2626'; }
-                            elseif (strpos($action, 'REVISION') !== false || strpos($action, 'REVISE') !== false) { $badgeLabel = 'REVISION'; $badgeBg = '#fffbeb'; $badgeColor = '#d97706'; }
-                            elseif (strpos($action, 'DELETE') !== false) { $badgeLabel = 'DELETED'; $badgeBg = '#fef2f2'; $badgeColor = '#ef4444'; }
-                            elseif (strpos($action, 'CANCEL') !== false) { $badgeLabel = 'CANCELLED'; $badgeBg = '#fef2f2'; $badgeColor = '#ef4444'; }
-                            elseif (strpos($action, 'APPROVE') !== false) { $badgeLabel = 'APPROVED'; $badgeBg = '#f0fdf4'; $badgeColor = '#16a34a'; }
-                            
-                            echo '  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">';
-                            echo '    <span style="font-size:9px; font-weight:700; background:'.$badgeBg.'; color:'.$badgeColor.'; padding:2px 6px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px;">'.$badgeLabel.'</span>';
-                            echo '    <span style="font-size:10px; color:#94a3b8;">'.$dTime.'</span>';
-                            echo '  </div>';
-                            echo '  <div style="font-size:11px; color:#94a3b8; margin-bottom:2px;">'.$uRole.' - '.$uName.'</div>';
-                            echo '  <div style="font-size:13px; color:#334155; font-weight:500;">'.htmlspecialchars($detail).'</div>';
-                            echo '</div>';
-                        }
-                    }
-                    ?>
-                </div>
+                <!-- General remarks removed (redundant with timeline) -->
                 <!-- Divider if both exist -->
                 <div id="remarks-divider" style="border-top:1px dashed #eee; margin:15px 0; display:none;"></div>
                 
@@ -520,11 +484,20 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
 
             <!-- Approval History Card -->
             <div class="card" style="flex:1; box-shadow:0 1px 2px rgba(0,0,0,0.05); border:1px solid #eee; overflow:hidden;">
-                <h4 style="margin-bottom:20px; border-bottom:1px solid #f0f0f0; padding-bottom:10px; color:#444; font-size:15px; font-weight:700;">Timeline</h4>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #f0f0f0; padding-bottom:10px;">
+                    <h4 style="color:#444; font-size:15px; font-weight:700; margin:0;">Timeline</h4>
+                    <button id="timeline-sort-btn" onclick="toggleTimelineSort()" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s;" title="Toggle sort order">
+                        <svg id="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+                        <span id="sort-label">Newest First</span>
+                    </button>
+                </div>
                 
                 <div class="timeline-wrapper" style="max-height: 600px; overflow-y: auto; overflow-x: hidden; padding-left: 10px; padding-right: 5px;">
-                    <div class="timeline" style="border-left:2px solid #e5e7eb; margin-left:35px; padding-left:24px; padding-bottom:10px; position:relative;">
-                    <?php foreach ($logs as $log): 
+                    <div class="timeline" id="timeline-container" style="border-left:2px solid #e5e7eb; margin-left:35px; padding-left:24px; padding-bottom:10px; position:relative;">
+                    <?php 
+                    // Default: Newest First
+                    $sortedLogs = array_reverse($logs);
+                    foreach ($sortedLogs as $log): 
                         // Skip draft-related entries (noise)
                         $rawAct0 = $log['action_type'] ?? $log['action'] ?? '';
                         if (in_array($rawAct0, ['DRAFT_INIT', 'DRAFT_SAVED', 'DRAFT_STARTED'])) continue;
@@ -539,7 +512,7 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                         $rawAction = $log['action_type'] ?? $log['action'] ?? 'Status Update';
                         $actionMap = [
                             'CREATED' => 'Request Submitted',
-                            'SUBMIT_REQUEST' => 'Request Submitted', // Handle legacy
+                            'SUBMIT_REQUEST' => 'Request Submitted',
                             'APPROVE_SPV' => 'Approved (SPV)',
                             'APPROVED_SPV' => 'Approved (SPV)',
                             'APPROVE_PIC' => 'Approved (PIC)',
@@ -553,14 +526,75 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                             'REJECTED' => 'Rejected',
                             'DELETED' => 'Deleted',
                             'CANCELLED' => 'Cancelled',
-                            'SEND_TO_MAKER_CONFIRMATION' => 'Sent to Maker',
+                            'SEND_TO_MAKER_CONFIRMATION' => 'Sent to Maker for Confirmation',
                             'MAKER_CONFIRM' => 'Maker Confirmed',
-                            'MAKER_REJECT_CONFIRMATION' => 'Maker Rejected',
+                            'MAKER_REJECT_CONFIRMATION' => 'Maker Rejected Confirmation',
                             'DRAFT_INIT' => 'Draft Started',
                             'DRAFT_SAVED' => 'Draft Saved',
-                            'LIBRARY_UPDATE' => 'Library Updated'
+                            'LIBRARY_UPDATE' => 'Library Updated',
+                            'REUSE_SCRIPT' => 'Reuse Script (dari Library)',
+                            'REVISION_DRAFT_CREATED' => 'Revision Draft Created',
+                            'ACTIVATED' => 'Activated',
+                            'DEACTIVATED' => 'Deactivated',
                         ];
+                        
                         $displayAction = $actionMap[$rawAction] ?? ucwords(strtolower(str_replace('_', ' ', $rawAction)));
+                        
+                        // [FIX] Auto-detect resubmit origin
+                        if ($rawAction === 'RESUBMIT' || $rawAction === 'SUBMIT_REQUEST' || $rawAction === 'CREATED') {
+                            // Check if this is a resubmit (not the first submission)
+                            $isResubmit = false;
+                            $resubmitOrigin = '';
+                            
+                            // Look backwards through ALL logs (unsorted) for a revision action that happened BEFORE this log
+                            $thisDate = $log['created_at'];
+                            $thisTs = ($thisDate instanceof \DateTime) ? $thisDate->getTimestamp() : strtotime($thisDate);
+                            
+                            foreach ($logs as $prevLog) {
+                                $prevDate = $prevLog['created_at'];
+                                $prevTs = ($prevDate instanceof \DateTime) ? $prevDate->getTimestamp() : strtotime($prevDate);
+                                
+                                if ($prevTs >= $thisTs) continue; // Only look at earlier entries
+                                
+                                $prevAction = $prevLog['action_type'] ?? $prevLog['action'] ?? '';
+                                $prevBy = $prevLog['full_name'] ?? $prevLog['user_id'] ?? '';
+                                
+                                if (in_array($prevAction, ['REVISION', 'MINOR_REVISION', 'MAJOR_REVISION', 'MAKER_REJECT_CONFIRMATION', 'REJECTED'])) {
+                                    $isResubmit = true;
+                                    $originMap = [
+                                        'REVISION' => 'Revision',
+                                        'MINOR_REVISION' => 'Minor Revision',
+                                        'MAJOR_REVISION' => 'Major Revision',
+                                        'MAKER_REJECT_CONFIRMATION' => 'Maker Rejection',
+                                        'REJECTED' => 'Rejection',
+                                    ];
+                                    $resubmitOrigin = ($originMap[$prevAction] ?? $prevAction) . ' by ' . $prevBy;
+                                    // Don't break — keep searching for the LATEST revision before this resubmit
+                                }
+                            }
+                            
+                            if ($isResubmit && $rawAction !== 'CREATED') {
+                                $displayAction = 'Re-submitted';
+                                if ($resubmitOrigin) $displayAction .= ' (dari ' . $resubmitOrigin . ')';
+                            } elseif ($isResubmit && $rawAction === 'CREATED') {
+                                // CREATED after a revision = resubmit
+                                $displayAction = 'Re-submitted';
+                                if ($resubmitOrigin) $displayAction .= ' (dari ' . $resubmitOrigin . ')';
+                            }
+                        }
+                        
+                        // [FIX] Override dot color based on action type (more informative than role alone)
+                        if (strpos($rawAction, 'REJECT') !== false || $rawAction === 'DELETED' || $rawAction === 'CANCELLED') {
+                            $roleColor = '#dc2626'; // Red
+                        } elseif ($rawAction === 'REVISION' || $rawAction === 'MINOR_REVISION' || $rawAction === 'MAJOR_REVISION') {
+                            $roleColor = '#dc2626'; // Red for revision requests
+                        } elseif ($rawAction === 'ACTIVATED') {
+                            $roleColor = '#f59e0b'; // Orange/Amber
+                        } elseif ($rawAction === 'DEACTIVATED') {
+                            $roleColor = '#6b7280'; // Gray
+                        } elseif ($rawAction === 'REUSE_SCRIPT' || $rawAction === 'REVISION_DRAFT_CREATED') {
+                            $roleColor = '#0ea5e9'; // Sky blue
+                        }
                     ?>
                     <div style="position:relative; margin-bottom:28px;">
                         <!-- Dot -->
@@ -575,12 +609,38 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                         <div style="font-weight:700; color:#333; font-size:13px; margin-bottom:3px; line-height:1.4;">
                             <?php echo htmlspecialchars($displayAction); ?>
                         </div>
+                        <?php 
+                        // Show script number for version-related actions
+                        $versionActions = ['REUSE_SCRIPT', 'REVISION_DRAFT_CREATED', 'MINOR_REVISION', 'MAJOR_REVISION', 'LIBRARY_UPDATE', 'LIBRARY'];
+                        if (in_array($rawAction, $versionActions)):
+                            $logScriptNum = $log['req_script_number'] ?? $log['script_number'] ?? '';
+                            if ($logScriptNum):
+                        ?>
+                            <div style="font-size:11px; color:#0ea5e9; font-weight:600; margin-bottom:3px; display:inline-flex; align-items:center; gap:4px;">
+                                → <?php echo htmlspecialchars($logScriptNum); ?>
+                            </div>
+                        <?php endif; endif; ?>
                         <div style="font-size:12px; color:#666; display: flex; flex-direction: column; gap: 2px;">
                             <div>
-                                by <span style="font-weight:600; color:<?php echo $roleColor; ?>"><?php echo htmlspecialchars($log['full_name'] ?? $log['user_id']); ?></span>
+                                by <span style="font-weight:600; color:<?php echo $roleColor; ?>">
+                                    <?php 
+                                        $fName = strtoupper($log['full_name'] ?? '');
+                                        $uId = strtoupper($log['user_id'] ?? '');
+                                        echo htmlspecialchars($fName ? "$fName ($uId)" : $uId); 
+                                    ?>
+                                </span>
                             </div>
                             <div style="font-size: 11px; color: #94a3b8;">
-                                <?php echo htmlspecialchars($log['job_function'] ?? $log['group_name'] ?? $log['user_role']); ?>
+                                <?php 
+                                    $dispRole = strtoupper($log['user_role'] ?? '');
+                                    if ($dispRole === 'MAKER') $dispRole = 'DEPT HEAD';
+                                    elseif ($dispRole === 'SPV') $dispRole = 'DIV HEAD';
+                                    elseif ($dispRole === 'PIC') $dispRole = 'COORDINATOR SCRIPT';
+                                    elseif ($dispRole === 'PROCEDURE') $dispRole = 'CPMS';
+                                    elseif (empty($dispRole)) $dispRole = strtoupper($log['job_function'] ?? $log['group_name'] ?? 'UNIT');
+                                    
+                                    echo htmlspecialchars($dispRole);
+                                ?>
                             </div>
                         </div>
                         <?php if (!empty($log['details'])): 
@@ -609,8 +669,8 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                     </div>
                     <?php endforeach; ?>
                     
-                    <!-- Start Point -->
-                    <div style="position:relative;">
+                    <!-- Start/End Point -->
+                    <div class="timeline-anchor" style="position:relative;">
                         <div style="position:absolute; left:-30px; top:5px; width:8px; height:8px; border-radius:50%; background:#d1d5db;"></div>
                         <div style="font-size:12px; color:#9ca3af; font-style:italic;">Created</div>
                     </div>
@@ -625,6 +685,42 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
 </div>
 
 <script>
+// Timeline Sort Toggle
+let timelineSortNewest = true; // Default: newest first
+function toggleTimelineSort() {
+    const container = document.getElementById('timeline-container');
+    if (!container) return;
+    
+    // Get all timeline entries (skip the anchor "Created" div)
+    const items = Array.from(container.children);
+    const anchor = container.querySelector('.timeline-anchor');
+    
+    // Reverse all items
+    items.reverse();
+    items.forEach(item => container.appendChild(item));
+    
+    // Toggle state
+    timelineSortNewest = !timelineSortNewest;
+    
+    // Update button label & icon
+    const label = document.getElementById('sort-label');
+    const icon = document.getElementById('sort-icon');
+    if (label) label.textContent = timelineSortNewest ? 'Newest First' : 'Oldest First';
+    if (icon) {
+        icon.innerHTML = timelineSortNewest 
+            ? '<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/>'   // Arrow down (newest)
+            : '<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>';    // Arrow up (oldest)
+    }
+    
+    // Button hover feedback
+    const btn = document.getElementById('timeline-sort-btn');
+    if (btn) {
+        btn.style.background = '#eff6ff';
+        btn.style.borderColor = '#93c5fd';
+        setTimeout(() => { btn.style.background = '#f8fafc'; btn.style.borderColor = '#e2e8f0'; }, 300);
+    }
+}
+
 // Version Timeline Toggle Function
 function toggleVersionContent(idx) {
     const content = document.getElementById('version-content-' + idx);
@@ -694,18 +790,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initial Render
         renderSideComments();
         
-        // Show Sidebar if there are comments, revision-spans, OR general remarks
+        // Show Sidebar if there are comments or revision-spans
         const comments = editorContainer.querySelectorAll('span[data-comment-id]');
         const revisionSpans = editorContainer.querySelectorAll('.revision-span, span[style*="text-decoration: line-through"], span[style*="text-decoration:line-through"]');
-        const hasGeneral = <?php echo $hasGeneralRemarks ? 'true' : 'false'; ?>;
         
-        if (comments.length > 0 || revisionSpans.length > 0 || hasGeneral) {
+        if (comments.length > 0 || revisionSpans.length > 0) {
             sidebar.style.display = 'block';
-            
-            // Show divider if BOTH general remarks AND inline entries exist
-            if ((comments.length > 0 || revisionSpans.length > 0) && hasGeneral) {
-                document.getElementById('remarks-divider').style.display = 'block';
-            }
         }
 
         // Add Resize Observer to re-align comments if layout changes

@@ -252,6 +252,10 @@ class RequestModel {
         $stmtLib = db_query($this->conn, $sqlLib, [$requestId]);
         if ($stmtLib) {
             while ($row = db_fetch_array($stmtLib, DB_FETCH_ASSOC)) {
+                // [FIX] Clean review marks at display time (handles old data with dirty HTML)
+                if (!empty($row['content'])) {
+                    $row['content'] = $this->cleanReviewMarks($row['content']);
+                }
                 $rows[] = $row;
             }
         }
@@ -419,7 +423,7 @@ class RequestModel {
             
             $sql = "SELECT TOP 1 id FROM script_request 
                     WHERE script_number LIKE ? 
-                    AND status NOT IN ('LIBRARY', 'COMPLETED', 'REJECTED', 'APPROVED_PROCEDURE', 'CANCELLED')
+                    AND status NOT IN ('LIBRARY', 'COMPLETED', 'REJECTED', 'APPROVED_PROCEDURE', 'CANCELLED', 'DRAFT_TEMP', 'DELETED')
                     ORDER BY id DESC";
             
             $stmt = db_query($this->conn, $sql, [$pattern]);
@@ -445,6 +449,42 @@ class RequestModel {
             
             $stmt = db_query($this->conn, $sql, [$pattern]);
             if ($stmt && ($row = db_fetch_array($stmt, DB_FETCH_ASSOC))) {
+                return $row;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Check if a newer version of this script exists (for version guard)
+     * @param string $scriptNumber The current script number (e.g. KONV-RC-12/02/26-0037-06)
+     * @return array|null Returns ['script_number'=>..., 'status'=>..., 'ticket_id'=>...] if newer exists, null otherwise
+     */
+    public function checkNewerVersionExists($scriptNumber) {
+        $parts = explode('-', $scriptNumber);
+        if (count($parts) < 5) return null;
+        
+        // Extract base and current version
+        $lastIdx = count($parts) - 1;
+        $currentVer = $parts[$lastIdx];
+        if (!is_numeric($currentVer)) return null;
+        
+        $baseNumber = implode('-', array_slice($parts, 0, $lastIdx));
+        
+        // Find ANY version of this base that is numerically higher
+        $sql = "SELECT TOP 1 id, script_number, status, ticket_id, current_role 
+                FROM script_request 
+                WHERE script_number LIKE ? 
+                AND script_number != ?
+                AND status NOT IN ('DRAFT_TEMP', 'CANCELLED', 'DELETED')
+                ORDER BY script_number DESC";
+        
+        $stmt = db_query($this->conn, $sql, [$baseNumber . '-%', $scriptNumber]);
+        if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+            // Extract the version number from the found script
+            $foundParts = explode('-', $row['script_number']);
+            $foundVer = end($foundParts);
+            if (is_numeric($foundVer) && intval($foundVer) > intval($currentVer)) {
                 return $row;
             }
         }
@@ -775,6 +815,16 @@ class RequestModel {
     // FIX: Always insert ALL rows. 
     // Previously FILE_UPLOAD was limited to 1 row, causing Multi-Sheet Excel to lose sheets.
     // If exact duplicates occur (e.g. same PDF for WA & SMS), we accept them to ensure data safety.
+
+    // [AUTO-DEACTIVATE] Deactivate ALL older versions of this script in the Library
+    $scriptNum = $req['script_number'];
+    $parts = explode('-', $scriptNum);
+    if (count($parts) >= 5) {
+        $baseNumber = implode('-', array_slice($parts, 0, count($parts) - 1));
+        $deactivateSql = "UPDATE script_library SET is_active = 0 WHERE script_number LIKE ? AND script_number != ?";
+        db_query($this->conn, $deactivateSql, [$baseNumber . '-%', $scriptNum]);
+    }
+
     foreach ($contentList as $c) {
         // CLEAN CONTENT: Remove all revision marks before publishing to Library
         $cleanContent = $this->cleanReviewMarks($c['content']);
@@ -798,30 +848,35 @@ class RequestModel {
     private function cleanReviewMarks($html) {
         if (empty($html)) return $html;
         
-        // 1. Remove revision spans (class contains 'revision-span')
-    // Matches: <span ... class="... revision-span ..."> ... </span>
-    $html = preg_replace('/<span[^>]*class="[^"]*revision-span[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $html);
-    
-    // 2. Remove inline comment spans (class contains 'inline-comment')
-    $html = preg_replace('/<span[^>]*class="[^"]*inline-comment[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $html);
-    
-    // 3. Remove any span with red color styling (Aggressive match for color: red/rbg)
-    // Matches attributes in any order. The style part targets color: followed by red-ish values
-    // We use a broader pattern for style content to be safe
-    $html = preg_replace('/<span[^>]*style="[^"]*color:\s*(red|#ef4444|rgb\(\s*255,\s*0,\s*0\s*\)|rgb\(\s*239,\s*68,\s*68\s*\))[^"]*"[^>]*>(.*?)<\/span>/is', '$2', $html);
-    
-    // 4. Remove any span with yellow background styling
-    $html = preg_replace('/<span[^>]*style="[^"]*background(-color)?:\s*#fef08a[^"]*"[^>]*>(.*?)<\/span>/is', '$2', $html);
-    
-    // 5. Cleanup: Remove data-comment attributes from ANY tag (just in case)
-    $html = preg_replace('/\sdata-comment-[a-z]+="[^"]*"/i', '', $html);
-    $html = preg_replace('/\sid="rev-[0-9]+"/i', '', $html); // Clean rev attributes
-    
-    // 6. Remove empty spans (recursively if needed, but one pass is usually enough for library)
-    $html = preg_replace('/<span>(.*?)<\/span>/is', '$1', $html);
-    $html = preg_replace('/<span\s*>(.*?)<\/span>/is', '$1', $html); // Empty attributes
-    
-    return $html;
+        // === STEP 1: REMOVE DELETED/STRIKETHROUGH TEXT (completely remove content) ===
+        // Deletion spans (class "deletion-span")
+        $html = preg_replace('/<span[^>]*class="[^"]*deletion-span[^"]*"[^>]*>.*?<\/span>/is', '', $html);
+        // <del>, <s>, <strike> tags
+        $html = preg_replace('/<del>(.*?)<\/del>/is', '', $html);
+        $html = preg_replace('/<s>(.*?)<\/s>/is', '', $html);
+        $html = preg_replace('/<strike>(.*?)<\/strike>/is', '', $html);
+        // Elements with line-through style
+        $html = preg_replace('/<[^>]*style="[^"]*text-decoration:\s*line-through[^"]*"[^>]*>.*?<\/[^>]*>/is', '', $html);
+        
+        // === STEP 2: KEEP RED TEXT CONTENT BUT REMOVE RED STYLING (clean for Library) ===
+        // revision-span and inline-comment spans → unwrap to plain text (no red color)
+        $html = preg_replace('/<span[^>]*class="[^"]*revision-span[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $html);
+        $html = preg_replace('/<span[^>]*class="[^"]*inline-comment[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $html);
+        // Red spans with inline style → unwrap to plain text
+        $html = preg_replace('/<span[^>]*style="[^"]*color:\s*(red|#ff0000|#ef4444|rgb\(\s*255,\s*0,\s*0\s*\))[^"]*"[^>]*>(.*?)<\/span>/is', '$2', $html);
+        
+        // === STEP 3: REMOVE YELLOW HIGHLIGHT (unwrap, keep text) ===
+        $html = preg_replace('/<span[^>]*style="[^"]*background(-color)?:\s*#fef08a[^"]*"[^>]*>(.*?)<\/span>/is', '$2', $html);
+        
+        // === STEP 4: CLEANUP ===
+        // Remove data-comment attributes
+        $html = preg_replace('/\sdata-comment-[a-z]+="[^"]*"/i', '', $html);
+        $html = preg_replace('/\sid="rev-[0-9]+"/i', '', $html);
+        // Remove empty spans
+        $html = preg_replace('/<span>(.*?)<\/span>/is', '$1', $html);
+        $html = preg_replace('/<span\s*>(.*?)<\/span>/is', '$1', $html);
+        
+        return $html;
     }
 
     public function getLibraryItems($startDate = null, $endDate = null, $sortOrder = 'DESC', $filters = [], $showInactive = false, $sortBy = 'created_at', $dateType = 'created_at', $search = null) {
@@ -1502,7 +1557,14 @@ class RequestModel {
                 $isLegacyFileUpload = true;
             } else {
                 // Free input: format as "WA:\n[content]\n\nSMS:\n[content]"
-                $contentSql = "SELECT * FROM script_preview_content WHERE request_id = ?";
+                // [FIX] Fetch only the LATEST version per media channel (highest ID = most recent)
+                $contentSql = "SELECT spc.* FROM script_preview_content spc
+                    INNER JOIN (
+                        SELECT media, MAX(id) as max_id
+                        FROM script_preview_content
+                        WHERE request_id = ?
+                        GROUP BY media
+                    ) latest ON spc.id = latest.max_id";
                 $contentStmt = db_query($this->conn, $contentSql, [$requestId]);
                 
                 $contentParts = [];
@@ -1512,6 +1574,17 @@ class RequestModel {
                         
                         // Robust Cleaning: Decode -> Newlines -> Strip
                         $text = html_entity_decode($content['content']); // Decode &lt;p&gt; etc
+                        
+                        // [FIX] Remove revision markup: strikethrough/deletion spans entirely
+                        $text = preg_replace('/<span[^>]*class="[^"]*deletion-span[^"]*"[^>]*>.*?<\/span>/is', '', $text);
+                        // [FIX] Remove revision span wrappers but keep their text content
+                        $text = preg_replace('/<span[^>]*class="[^"]*revision-span[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $text);
+                        // [FIX] Remove any remaining red-colored spans (inline style)
+                        $text = preg_replace('/<span[^>]*style="[^"]*color:\s*red[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $text);
+                        // [FIX] Remove strikethrough text
+                        $text = preg_replace('/<s>(.*?)<\/s>/is', '', $text);
+                        $text = preg_replace('/<del>(.*?)<\/del>/is', '', $text);
+                        
                         $text = preg_replace('/<br\s*\/?>/i', "\n", $text);
                         $text = preg_replace('/<\/p>\s*<p[^>]*>/i', "\n\n", $text); 
                         $text = preg_replace('/<\/p>/i', "\n", $text);
@@ -2024,31 +2097,36 @@ class RequestModel {
         return $items;
     }
 
-    public function toggleScriptActivation($requestId, $isActive, $userId) {
+    public function toggleScriptActivation($requestId, $isActive, $userId, $startDate = null) {
         // Toggle is_active for ALL library items belonging to this Request ID
         // (Since a request can have multiple rows for different media)
         
         $status = $isActive ? 1 : 0;
         
-        // Logic:
-        // 1. Update is_active
-        // 2. If Activating: Set activated_at = NOW() and activated_by = User
-        // 3. If Deactivating: Keep history? Or nullify? Usually keep history but update status.
-        // Let's just update timestamp ON ACTIVATION only.
-        
         $sql = "";
         $params = [];
         
         if ($status === 1) {
-            // Activate
-            $sql = "UPDATE script_library 
-                    SET is_active = 1, 
-                        activated_at = GETDATE(), 
-                        activated_by = ? 
-                    WHERE request_id = ?";
-            $params = [$userId, $requestId];
+            // Activate — also set start_date
+            if ($startDate) {
+                $sql = "UPDATE script_library 
+                        SET is_active = 1, 
+                            start_date = ?,
+                            activated_at = GETDATE(), 
+                            activated_by = ? 
+                        WHERE request_id = ?";
+                $params = [$startDate, $userId, $requestId];
+            } else {
+                $sql = "UPDATE script_library 
+                        SET is_active = 1, 
+                            start_date = GETDATE(),
+                            activated_at = GETDATE(), 
+                            activated_by = ? 
+                        WHERE request_id = ?";
+                $params = [$userId, $requestId];
+            }
         } else {
-            // Deactivate (Preserve activation history? Or clear it? Let's preserve old timestamp but set active=0)
+            // Deactivate (preserve activation history)
             $sql = "UPDATE script_library 
                     SET is_active = 0 
                     WHERE request_id = ?";

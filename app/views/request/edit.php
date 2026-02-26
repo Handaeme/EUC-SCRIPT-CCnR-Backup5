@@ -163,6 +163,7 @@ require_once 'app/views/layouts/sidebar.php';
                 
                 <input type="hidden" id="request_id" value="<?php echo $request['id']; ?>">
                 <input type="hidden" id="script_number" value="<?php echo $request['script_number']; ?>">
+                <input type="hidden" id="input_mode" value="<?php echo htmlspecialchars($request['mode'] ?? 'FREE_INPUT'); ?>">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <!-- COL 1: Title & Type -->
@@ -173,19 +174,7 @@ require_once 'app/views/layouts/sidebar.php';
                             <textarea id="title" class="form-control" rows="2" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; font-family:'Inter', sans-serif; resize:vertical;" placeholder="Jelaskan tujuan..."><?php echo htmlspecialchars($request['title'] ?? ''); ?></textarea>
                         </div>
 
-                        <!-- JENIS -->
-                        <div style="margin-bottom: 15px;">
-                            <label class="form-label" style="display:block; margin-bottom:5px; font-size:12px; font-weight:600; color:#64748b;">Jenis</label>
-                            <div style="display:flex; gap:15px;">
-                                <label style="font-size:13px; color:#334155;"><input type="radio" name="jenis" value="Konvensional" onchange="filterProduk()" <?php echo (strpos($request['jenis'], 'Konvensional')!==false)?'checked':''; ?>> Konvensional</label>
-                                <label style="font-size:13px; color:#334155;"><input type="radio" name="jenis" value="Syariah" onchange="filterProduk()" <?php echo (strpos($request['jenis'], 'Syariah')!==false)?'checked':''; ?>> Syariah</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- COL 2: Product & Category -->
-                    <div>
-                         <!-- PRODUK -->
+                        <!-- PRODUK -->
                          <?php 
                             $prodVals = array_map('trim', explode(',', (string)$request['produk'])); 
                             $otherProd = '';
@@ -214,22 +203,48 @@ require_once 'app/views/layouts/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- COL 2: Product & Category -->
+                    <div>
+                        <!-- JENIS -->
+                        <div style="margin-bottom: 15px;">
+                            <label class="form-label" style="display:block; margin-bottom:5px; font-size:12px; font-weight:600; color:#64748b;">Jenis</label>
+                            <div style="display:flex; gap:15px;">
+                                <label style="font-size:13px; color:#334155;"><input type="radio" name="jenis" value="Konvensional" onchange="filterProduk()" <?php echo (strpos($request['jenis'], 'Konvensional')!==false)?'checked':''; ?>> Konvensional</label>
+                                <label style="font-size:13px; color:#334155;"><input type="radio" name="jenis" value="Syariah" onchange="filterProduk()" <?php echo (strpos($request['jenis'], 'Syariah')!==false)?'checked':''; ?>> Syariah</label>
+                            </div>
+                        </div>
 
                         <!-- KATEGORI -->
-                        <?php $kats = array_map('trim', explode(',', $request['kategori'])); ?>
+                        <?php 
+                            $kats = array_map('trim', explode(',', $request['kategori'])); 
+                            $otherKategori = '';
+                            foreach ($kats as $k) {
+                                if (strpos($k, 'Others:') !== false) $otherKategori = trim(explode(':', $k)[1]);
+                            }
+                        ?>
                         <div style="margin-bottom: 15px;">
                             <label class="form-label" style="display:block; margin-bottom:5px; font-size:12px; font-weight:600; color:#64748b;">Kategori</label>
-                            <div style="display:flex; gap:10px;">
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
                                 <label style="font-size:12px;"><input type="checkbox" name="kategori" value="Pre Due" <?php echo in_array('Pre Due', $kats)?'checked':''; ?>> Pre Due</label>
                                 <label style="font-size:12px;"><input type="checkbox" name="kategori" value="Past Due" <?php echo in_array('Past Due', $kats)?'checked':''; ?>> Past Due</label>
                                 <label style="font-size:12px;"><input type="checkbox" name="kategori" value="Program Offer" <?php echo in_array('Program Offer', $kats)?'checked':''; ?>> Program Offer</label>
+                                <label style="font-size:12px;"><input type="checkbox" name="kategori" value="Others" onchange="toggleInput('kategori_other', this.checked)" <?php echo ($otherKategori)?'checked':''; ?>> Others</label>
                             </div>
+                            <input type="text" id="kategori_other" class="form-control" style="display:<?php echo ($otherKategori)?'block':'none'; ?>; margin-top:5px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; font-size:12px;" placeholder="Other category..." value="<?php echo htmlspecialchars($otherKategori); ?>">
                         </div>
                     </div>
                 </div>
 
                 <!-- MEDIA (Full Row) -->
-                 <?php $medVals = array_map('trim', explode(',', (string)$request['media'])); ?>
+                 <?php 
+                    $medVals = array_map('trim', explode(',', (string)$request['media'])); 
+                    $otherMedia = '';
+                    foreach ($medVals as $m) {
+                        if (strpos($m, 'Others:') !== false) $otherMedia = trim(explode(':', $m)[1]);
+                    }
+                 ?>
                 <div style="margin-top: 5px;">
                     <label class="form-label" style="display:block; margin-bottom:5px; font-size:12px; font-weight:600; color:#64748b;">Media</label>
                     <div class="checkbox-group" id="media-list" style="display:flex; flex-wrap:wrap; gap:15px;">
@@ -240,19 +255,11 @@ require_once 'app/views/layouts/sidebar.php';
                         <label style="font-size:12px;"><input type="checkbox" name="media" value="Surat" onchange="updateFreeInputTabs()" <?php echo in_array('Surat', $medVals)?'checked':''; ?>> Surat</label>
                         <label style="font-size:12px;"><input type="checkbox" name="media" value="VB" onchange="updateFreeInputTabs()" <?php echo in_array('VB', $medVals)?'checked':''; ?>> VB</label>
                         <label style="font-size:12px;"><input type="checkbox" name="media" value="Chatbot" onchange="updateFreeInputTabs()" <?php echo in_array('Chatbot', $medVals)?'checked':''; ?>> Chatbot</label>
+                        <label style="font-size:12px;"><input type="checkbox" name="media" value="Others" onchange="toggleInput('media_other', this.checked); updateFreeInputTabs()" <?php echo ($otherMedia)?'checked':''; ?>> Others</label>
                     </div>
+                    <input type="text" id="media_other" class="form-control" style="display:<?php echo ($otherMedia)?'block':'none'; ?>; margin-top:5px; width:100%; max-width:400px; padding:6px; border:1px solid #ddd; border-radius:4px; font-size:12px;" placeholder="Other media..." value="<?php echo htmlspecialchars($otherMedia); ?>">
                 </div>
 
-                <!-- START DATE (Optional) - Hidden for Revisions per Request -->
-                <?php 
-                $isRevision = in_array($request['status'], ['REVISION', 'MINOR_REVISION', 'MAJOR_REVISION']);
-                $displayDate = $isRevision ? 'none' : 'block';
-                ?>
-                <div style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px; display: <?php echo $displayDate; ?>;">
-                     <label class="form-label" style="display:block; margin-bottom:5px; font-size:12px; font-weight:600; color:#64748b;">Tanggal Efektif (Start Date)</label>
-                     <input type="date" id="start_date" class="form-control" style="width:100%; max-width:250px; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;" value="<?php echo htmlspecialchars($request['start_date'] ?? ''); ?>">
-                     <p style="font-size:11px; color:#94a3b8; margin-top:4px;">Kosongkan jika berlaku segera. Script hanya akan muncul di Library Search mulai tanggal ini.</p>
-                </div>
             </div>
 
             <!-- 2. EDITOR SECTION -->
@@ -277,7 +284,7 @@ require_once 'app/views/layouts/sidebar.php';
                     <div style="font-size:14px; color:#555;">Upload New Version (Optional)</div>
                     <div style="font-size:12px; color:#888;">Click to replace current file</div>
                 </div>
-                <input type="file" id="fileInput" name="file" accept=".xlsx, .xls" style="display:none" onchange="handleFile(this.files)">
+                <input type="file" id="fileInput" name="file" accept=".xlsx, .xls" style="display:none" onchange="handleFileSelect(this)">
                 <div id="upload-status" style="margin-top:10px; color:#666; font-style:italic;"></div>
             </div>
     
@@ -322,7 +329,72 @@ require_once 'app/views/layouts/sidebar.php';
                                     $hasPrebuiltTabs = (strpos($rawContent, 'sheet-tabs-nav') !== false);
                                     
                                     if ($hasPrebuiltTabs) {
-                                        echo $rawContent;
+                                        // FIX: Deduplicate sheet panes in pre-built HTML
+                                        // This handles content that was saved with duplicate tabs from a previous bug
+                                        $dom = new \DOMDocument();
+                                        libxml_use_internal_errors(true);
+                                        $dom->loadHTML('<?xml encoding="utf-8" ?><div id="__wrapper__">' . $rawContent . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                                        libxml_clear_errors();
+                                        
+                                        $xpath = new \DOMXPath($dom);
+                                        
+                                        // Find all nav button containers
+                                        $navDivs = $xpath->query("//*[contains(@class, 'sheet-tabs-nav')]");
+                                        
+                                        if ($navDivs->length > 0) {
+                                            // Keep only the FIRST nav, remove the rest
+                                            $firstNav = $navDivs->item(0);
+                                            for ($i = $navDivs->length - 1; $i > 0; $i--) {
+                                                $dup = $navDivs->item($i);
+                                                $dup->parentNode->removeChild($dup);
+                                            }
+                                            
+                                            // Now collect UNIQUE sheet names from the first nav's buttons
+                                            $navBtns = $xpath->query(".//*[contains(@class, 'btn-sheet')]", $firstNav);
+                                            $uniqueSheetIds = [];
+                                            $seenNames = [];
+                                            $btnsToRemove = [];
+                                            
+                                            foreach ($navBtns as $btn) {
+                                                $name = trim($btn->textContent);
+                                                $onclick = $btn->getAttribute('onclick');
+                                                preg_match("/['\"]([^'\"]+)['\"]/", $onclick, $matches);
+                                                $targetId = $matches[1] ?? '';
+                                                
+                                                if (in_array($name, $seenNames)) {
+                                                    // Duplicate button - mark for removal
+                                                    $btnsToRemove[] = $btn;
+                                                    // Also remove the corresponding pane
+                                                    if ($targetId) {
+                                                        $pane = $dom->getElementById($targetId);
+                                                        if ($pane) $pane->parentNode->removeChild($pane);
+                                                    }
+                                                } else {
+                                                    $seenNames[] = $name;
+                                                    if ($targetId) $uniqueSheetIds[] = $targetId;
+                                                }
+                                            }
+                                            
+                                            foreach ($btnsToRemove as $btn) {
+                                                $btn->parentNode->removeChild($btn);
+                                            }
+                                            
+                                            // Remove any orphaned panes (sheet-pane not referenced by any button)
+                                            $allPanes = $xpath->query("//*[contains(@class, 'sheet-pane') or contains(@class, 'media-pane')]");
+                                            foreach ($allPanes as $pane) {
+                                                $paneId = $pane->getAttribute('id');
+                                                if ($paneId && !in_array($paneId, $uniqueSheetIds)) {
+                                                    $pane->parentNode->removeChild($pane);
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Output cleaned HTML
+                                        $cleanedHtml = $dom->saveHTML();
+                                        $cleanedHtml = str_replace('<?xml encoding="utf-8" ?>', '', $cleanedHtml);
+                                        // Remove the wrapper div
+                                        $cleanedHtml = preg_replace('/^<div id="__wrapper__">(.*)<\/div>$/s', '$1', trim($cleanedHtml));
+                                        echo $cleanedHtml;
                                     } 
                                     elseif (count($content) > 1) {
                                         echo '<div class="sheet-tabs-nav">';
@@ -455,6 +527,8 @@ require_once 'app/views/layouts/sidebar.php';
                             <!-- Vertical Timeline Line -->
                             <div style="position: absolute; left: 11px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; z-index: 1;"></div>
                             
+                            <!-- SCROLLABLE CONTAINER -->
+                            <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;" class="custom-scrollbar">
                             <?php if (!empty($timeline)): ?>
                                 <?php foreach (array_reverse($timeline) as $idx => $log): ?>
                                     <div style="position: relative; padding-left: 30px; margin-bottom: 20px; z-index: 2;">
@@ -465,9 +539,23 @@ require_once 'app/views/layouts/sidebar.php';
                                             <?php echo htmlspecialchars($log['action_type'] ?? $log['action'] ?? 'Status Update'); ?>
                                         </div>
                                         <div style="font-size: 10px; color: #64748b; display: flex; align-items: center; gap: 4px;">
-                                            <span style="font-weight: 600; color: #475569;"><?php echo htmlspecialchars($log['user_id']); ?></span>
+                                            <span style="font-weight: 600; color: #475569;">
+                                                <?php 
+                                                    $fName = strtoupper($log['full_name'] ?? '');
+                                                    $uId = strtoupper($log['user_id'] ?? '');
+                                                    echo htmlspecialchars($fName ? "$fName ($uId)" : $uId); 
+                                                ?>
+                                            </span>
                                             •
-                                            <span><?php echo htmlspecialchars($log['group_name'] ?? 'Unit'); ?></span>
+                                            <?php 
+                                                $dispRole = strtoupper($log['user_role'] ?? '');
+                                                if ($dispRole === 'MAKER') $dispRole = 'DEPT HEAD';
+                                                elseif ($dispRole === 'SPV') $dispRole = 'DIV HEAD';
+                                                elseif ($dispRole === 'PIC') $dispRole = 'COORDINATOR SCRIPT';
+                                                elseif ($dispRole === 'PROCEDURE') $dispRole = 'CPMS';
+                                                elseif (empty($dispRole)) $dispRole = strtoupper($log['group_name'] ?? 'UNIT');
+                                            ?>
+                                            <span><?php echo htmlspecialchars($dispRole); ?></span>
                                         </div>
                                         <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">
                                             <?php 
@@ -491,6 +579,7 @@ require_once 'app/views/layouts/sidebar.php';
                             <?php else: ?>
                                 <p style="color: #94a3b8; font-size: 11px; font-style: italic; text-align: center; margin-left: 30px;">No history available.</p>
                             <?php endif; ?>
+                            </div>
                         </div>
                     </div>
 
@@ -2230,12 +2319,12 @@ require_once 'app/views/layouts/sidebar.php';
         syncToStorage();
         
         const title = "<?php echo addslashes($request['title']); ?>"; 
-        const requestId = document.getElementById('request_id').value;
-        const ticketId = document.getElementById('script_number').value;
+        const requestId = document.getElementById('request_id')?.value || '<?php echo $request['id']; ?>';
+        const ticketId = document.getElementById('script_number')?.value || '<?php echo $request['script_number']; ?>';
         const jenis = Array.from(document.querySelectorAll('input[name="jenis"]:checked')).map(c => c.value).join(',');
-        const spv = document.getElementById('selected_spv').value;
-        const note = document.getElementById('maker_note').value.trim();
-        const inputMode = document.getElementById('input_mode').value;
+        const spv = document.getElementById('selected_spv')?.value || '';
+        const note = (document.getElementById('maker_note')?.value || '').trim();
+        const inputMode = document.getElementById('input_mode')?.value || '<?php echo $request['mode'] ?? 'FREE_INPUT'; ?>';
 
         // ===== COMPREHENSIVE VALIDATION =====
         if (!isDraft) {
@@ -2333,26 +2422,39 @@ require_once 'app/views/layouts/sidebar.php';
         const otherKonv = document.getElementById('prod_konv_other');
         if (otherKonv && otherKonv.style.display !== 'none' && otherKonv.value.trim()) selectedProduk.push(otherKonv.value.trim());
 
-        // Collect Kategori & Media
-        const kategori = Array.from(document.querySelectorAll('input[name="kategori"]:checked')).map(c => c.value).join(',');
-        const selMedNodes = Array.from(document.querySelectorAll('input[name="media"]:checked'));
-        const mediaNames = selMedNodes.map(c => c.value).join(',');
+        // Collect Kategori
+        let selectedKategori = Array.from(document.querySelectorAll('input[name="kategori"]:checked'))
+            .filter(c => c.value !== 'Others')
+            .map(c => c.value);
+        const otherKategori = document.getElementById('kategori_other');
+        if (otherKategori && otherKategori.style.display !== 'none' && otherKategori.value.trim()) selectedKategori.push('Others: ' + otherKategori.value.trim());
+
+        // Collect Media
+        let selectedMedia = Array.from(document.querySelectorAll('input[name="media"]:checked'))
+            .filter(c => c.value !== 'Others')
+            .map(c => c.value);
+        const otherMedia = document.getElementById('media_other');
+        if (otherMedia && otherMedia.style.display !== 'none' && otherMedia.value.trim()) selectedMedia.push('Others: ' + otherMedia.value.trim());
+
+        // To keep logic for selMedNodes intact (used for Free Input loops below)
+        const selMedNodes = Array.from(document.querySelectorAll('input[name="media"]:checked')).filter(c => c.value !== 'Others'); 
+        // Note: For Free input we only loop predefined medias, Custom Others is just a label, they shouldn't type free text in an "others" tab unless we create one.
 
         const formData = new FormData();
         formData.append('request_id', requestId);
         formData.append('script_number', ticketId);
         formData.append('jenis', jenis);
         formData.append('produk', selectedProduk.join(','));
-        formData.append('kategori', kategori);
-        formData.append('media', mediaNames);
+        formData.append('kategori', selectedKategori.join(','));
+        formData.append('media', selectedMedia.join(','));
         formData.append('title', document.getElementById('title')?.value || '');
-        formData.append('input_mode', document.getElementById('input_mode').value);
+        formData.append('input_mode', document.getElementById('input_mode')?.value || inputMode);
         formData.append('selected_spv', spv);
         formData.append('maker_note', note);
         
-        // Start Date
-        const startDate = document.getElementById('start_date').value;
-        if (startDate) formData.append('start_date', startDate);
+        // Start Date (optional field, may not exist)
+        const startDateEl = document.getElementById('start_date');
+        if (startDateEl && startDateEl.value) formData.append('start_date', startDateEl.value);
         
         // DRAFT FLAG
         if (isDraft) formData.append('is_draft', '1');
@@ -2390,33 +2492,67 @@ require_once 'app/views/layouts/sidebar.php';
             // --- END SANITIZATION ---
 
             // Support both .sheet-pane (Legacy) and .media-pane (New)
-            const sheets = editorRoot.querySelectorAll('.sheet-pane, .media-pane');
+            // FIX: Only collect FIRST-LEVEL sheet panes to avoid nested duplicates
+            // Strategy: Use the nav buttons as source of truth for sheet names,
+            // then match each to its corresponding pane.
+            const navBtns = editorRoot.querySelectorAll('.sheet-tabs-nav .btn-sheet');
+            const allPanes = editorRoot.querySelectorAll('.sheet-pane, .media-pane');
             
-            if (sheets.length > 0) {
-                // Multi-sheet structure found
+            if (navBtns.length > 0) {
+                // USE NAV BUTTONS AS SOURCE OF TRUTH (most reliable)
                 let shData = [];
-                sheets.forEach(sh => {
+                const usedNames = new Set();
+                
+                navBtns.forEach(btn => {
+                    const shName = btn.innerText.trim();
+                    if (!shName || usedNames.has(shName)) return; // Skip duplicates
+                    usedNames.add(shName);
+                    
+                    // Find the pane this button targets
+                    const onclickAttr = btn.getAttribute('onclick') || '';
+                    const match = onclickAttr.match(/['"]([^'"]+)['"]/);
+                    let pane = null;
+                    if (match && match[1]) {
+                        pane = document.getElementById(match[1]);
+                    }
+                    
+                    if (pane) {
+                        shData.push({
+                            sheet_name: shName,
+                            content: pane.innerHTML
+                        });
+                    }
+                });
+                
+                if (shData.length > 0) {
+                    formData.append('script_content', JSON.stringify(shData));
+                } else {
+                    // Fallback if button matching failed
+                    formData.append('script_content', editorRoot.innerHTML);
+                }
+            } else if (allPanes.length > 0) {
+                // NO NAV BUTTONS: Fallback to pane scanning with deduplication
+                let shData = [];
+                const usedNames = new Set();
+                
+                allPanes.forEach(sh => {
                     const shId = sh.id;
-                    let shName = "Sheet"; 
+                    let shName = sh.getAttribute('data-name') || "Sheet";
                     
-                    // Strategy 1: Find button by onclick (Reviewer Style)
-                    // Pattern: changeSheet('tab-media-0') or similar
+                    // Try to get name from a matching button
                     let btn = editorRoot.querySelector(`div[onclick*="'${shId}'"], button[onclick*="'${shId}'"]`);
-                    
-                    // Strategy 2: ID Correlation (tab-media-0 -> btn-tab-media-0)
                     if (!btn && shId.startsWith('tab-media-')) {
                         btn = document.getElementById('btn-' + shId);
                     }
-
-                    if (btn) {
-                        shName = btn.innerText;
-                    } else {
-                        shName = sh.getAttribute('data-name') || shName;
-                    }
+                    if (btn) shName = btn.innerText.trim();
+                    
+                    // DEDUPLICATION: Skip if we already have this sheet name
+                    if (usedNames.has(shName)) return;
+                    usedNames.add(shName);
                     
                     shData.push({
-                        sheet_name: shName.trim(),
-                        content: sh.innerHTML // Save inner content only
+                        sheet_name: shName,
+                        content: sh.innerHTML
                     });
                 });
                 formData.append('script_content', JSON.stringify(shData));
@@ -2430,7 +2566,7 @@ require_once 'app/views/layouts/sidebar.php';
         } else {
             let contentData = [];
             selMedNodes.forEach(c => {
-                const text = document.getElementById('storage-' + c.value).value;
+                const text = document.getElementById('storage-' + c.value)?.value || '';
                 contentData.push({ sheet_name: c.value, content: text });
             });
             formData.append('script_content', JSON.stringify(contentData));

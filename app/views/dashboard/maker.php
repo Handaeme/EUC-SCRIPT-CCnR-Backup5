@@ -466,13 +466,13 @@ function switchMakerTab(tab) {
 // Maker Confirm Request
 function confirmRequest(requestId) {
     Swal.fire({
-        title: 'Konfirmasi & Kirim ke Procedure?',
-        html: 'Apakah Anda yakin telah <b>mengkonfirmasi</b> script ini? Request akan dikembalikan ke <b>Procedure</b> untuk di-publish.',
+        title: 'Selesai Review & Kirim?',
+        html: 'Apakah Anda yakin telah selesai mereview script ini? Script akan dikirimkan kembali ke <b>Procedure</b> untuk di-publish.',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#10b981',
         cancelButtonColor: '#aaa',
-        confirmButtonText: 'Ya, Konfirmasi!',
+        confirmButtonText: 'Ya, Kirim Sekarang!',
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -484,42 +484,10 @@ function confirmRequest(requestId) {
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire('Dikonfirmasi!', data.message || 'Request dikembalikan ke Procedure.', 'success')
+                    Swal.fire('Berhasil Dikirim!', data.message || 'Script dikembalikan ke Procedure.', 'success')
                     .then(() => location.reload());
                 } else {
-                    Swal.fire('Error', data.error || 'Gagal mengkonfirmasi.', 'error');
-                }
-            })
-            .catch(err => Swal.fire('Error', 'Network error: ' + err.message, 'error'));
-        }
-    });
-}
-
-// Maker Reject Confirmation
-function rejectConfirmation(requestId) {
-    Swal.fire({
-        title: 'Tolak Konfirmasi?',
-        html: 'Request akan <b>dikembalikan ke Procedure</b> untuk direvisi ulang.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#aaa',
-        confirmButtonText: 'Ya, Tolak!',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch('index.php?controller=request&action=makerConfirm', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ request_id: requestId, decision: 'reject' })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire('Ditolak', data.message || 'Request dikembalikan ke Procedure.', 'info')
-                    .then(() => location.reload());
-                } else {
-                    Swal.fire('Error', data.error || 'Gagal menolak.', 'error');
+                    Swal.fire('Error', data.error || 'Gagal mengirim.', 'error');
                 }
             })
             .catch(err => Swal.fire('Error', 'Network error: ' + err.message, 'error'));

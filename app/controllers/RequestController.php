@@ -473,18 +473,7 @@ class RequestController extends Controller {
                 'Confirmed by Maker (' . $makerName . '). Returned to Procedure for publishing.'
             );
 
-            echo json_encode(['success' => true, 'message' => 'Konfirmasi berhasil. Request dikembalikan ke Procedure.']);
-        } elseif ($decision === 'reject') {
-            // Return to Procedure queue
-            $reqModel->updateStatus($req['id'], 'APPROVED_PIC', 'PROCEDURE', $userId);
-            $reqModel->logAudit(
-                $req['id'], $req['script_number'],
-                'MAKER_REJECT_CONFIRMATION',
-                'MAKER', $userId,
-                'Rejected by Maker (' . $makerName . '). Returned to Procedure for revision.'
-            );
-
-            echo json_encode(['success' => true, 'message' => 'Request returned to Procedure']);
+            echo json_encode(['success' => true, 'message' => 'Review selesai. Script dikirimkan kembali ke Procedure.']);
         } else {
             echo json_encode(['success' => false, 'error' => 'Invalid decision: ' . $decision]);
         }
@@ -564,6 +553,16 @@ class RequestController extends Controller {
             if (count($_SESSION['reuse_processed_tokens']) > 10) {
                 array_shift($_SESSION['reuse_processed_tokens']);
             }
+            
+            // Log audit trail for reuse
+            $origReq = $reqModel->getRequestById($input['original_id']);
+            $origNumber = $origReq['script_number'] ?? 'N/A';
+            $reqModel->logAudit(
+                $result['id'], $result['number'],
+                'REUSE_SCRIPT',
+                'MAKER', $userId,
+                'Reused from ' . $origNumber . ' by ' . $userId
+            );
             
             echo json_encode(['success'=>true, 'new_id'=>$result['id'], 'new_number'=>$result['number']]);
         }
@@ -663,7 +662,7 @@ class RequestController extends Controller {
                  $exStatus = $exReq['status'] ?? 'Draft';
                  
                  header("Location: ?controller=request&action=review_library_script&id=" . $existingDraftId . 
-                        "&duplicate_alert=1&dup_ticket=" . urlencode($exTicket) . "&dup_status=" . urlencode($exStatus));
+                        "&duplicate_alert=1&dup_ticket=" . urlencode($exTicket) . "&dup_status=" . urlencode($exStatus) . "&dup_id=" . urlencode($existingDraftId));
                  exit;
              } elseif ($existingDraftId == $id) {
                  // SAFETY: If I AM the existing draft (and status is somehow LIBRARY/COMPLETED?), stop loop.
@@ -672,8 +671,16 @@ class RequestController extends Controller {
                  $res = $reqModel->createRevisionDraft($id, $makerId, $spvId);
                  
                  if (isset($res['success']) && $res['success']) {
-                     // Redirect to the NEW DRAFT
-                     header("Location: ?controller=request&action=review_library_script&id=" . $res['id']);
+                 // Log audit trail for revision draft
+                 $reqModel->logAudit(
+                     $res['id'], $request['script_number'] ?? 'N/A',
+                     'REVISION_DRAFT_CREATED',
+                     'PROCEDURE', $_SESSION['user']['userid'],
+                     'Revision draft created by ' . ($_SESSION['user']['fullname'] ?? $_SESSION['user']['userid']) . ' from published script'
+                 );
+                 
+                 // Redirect to the NEW DRAFT
+                 header("Location: ?controller=request&action=review_library_script&id=" . $res['id']);
                      exit;
                  } else {
                      echo "Failed to initialize revision draft: " . ($res['error'] ?? 'Unknown error');
@@ -698,6 +705,12 @@ class RequestController extends Controller {
 
         $revisions = []; 
 
+        // [VERSION GUARD] Check if a newer version exists — pass to view for banner
+        $newerVersionInfo = null;
+        if (!empty($request['script_number'])) {
+            $newerVersionInfo = $reqModel->checkNewerVersionExists($request['script_number']);
+        }
+
         require_once 'app/views/request/review.php';
     }
 
@@ -709,6 +722,15 @@ class RequestController extends Controller {
 
         $reqModel = $this->model('RequestModel');
         $id = $input['request_id'];
+
+        // [VERSION GUARD] Block update if newer version exists
+        $req = $reqModel->getRequestById($id);
+        if ($req) {
+            $newer = $reqModel->checkNewerVersionExists($req['script_number']);
+            if ($newer) {
+                echo json_encode(['success'=>false, 'error'=>'newer_version_exists', 'newer_script'=>$newer['script_number'], 'newer_status'=>$newer['status'], 'newer_id'=>$newer['id']]); return;
+            }
+        }
 
         // SAVE CONTENT IF PROVIDED (Critical for Procedure edits)
         if (isset($input['updated_content']) && is_array($input['updated_content'])) {
@@ -746,6 +768,15 @@ class RequestController extends Controller {
 
         $reqModel = $this->model('RequestModel');
 
+        // [VERSION GUARD] Block revision if newer version exists
+        $req = $reqModel->getRequestById($id);
+        if ($req) {
+            $newer = $reqModel->checkNewerVersionExists($req['script_number']);
+            if ($newer) {
+                echo json_encode(['success'=>false, 'error'=>'newer_version_exists', 'newer_script'=>$newer['script_number'], 'newer_status'=>$newer['status'], 'newer_id'=>$newer['id']]); return;
+            }
+        }
+
         // SAVE CONTENT IF PROVIDED
         if (isset($input['updated_content']) && is_array($input['updated_content'])) {
             foreach ($input['updated_content'] as $contentId => $html) {
@@ -770,6 +801,15 @@ class RequestController extends Controller {
         $id = $input['request_id'];
 
         $reqModel = $this->model('RequestModel');
+
+        // [VERSION GUARD] Block revision if newer version exists
+        $req = $reqModel->getRequestById($id);
+        if ($req) {
+            $newer = $reqModel->checkNewerVersionExists($req['script_number']);
+            if ($newer) {
+                echo json_encode(['success'=>false, 'error'=>'newer_version_exists', 'newer_script'=>$newer['script_number'], 'newer_status'=>$newer['status'], 'newer_id'=>$newer['id']]); return;
+            }
+        }
 
         // SAVE CONTENT IF PROVIDED
         if (isset($input['updated_content']) && is_array($input['updated_content'])) {
@@ -1861,6 +1901,16 @@ class RequestController extends Controller {
 
         $userId = $_SESSION['user']['userid'] ?? 'UNKNOWN';
         $reqModel = $this->model('RequestModel');
+
+        // [VERSION GUARD] Block activation if newer version exists
+        $req = $reqModel->getRequestById($requestId);
+        if ($req && $isActive) { // Only check when activating, not deactivating
+            $newer = $reqModel->checkNewerVersionExists($req['script_number']);
+            if ($newer) {
+                echo json_encode(['success'=>false, 'error'=>'newer_version_exists', 'newer_script'=>$newer['script_number'], 'newer_status'=>$newer['status'], 'newer_id'=>$newer['id']]); return;
+            }
+        }
+
         if ($reqModel->updateActiveStatus($requestId, $isActive, $startDate, $userId)) {
             // Log Audit
             $statusLabel = $isActive ? 'ACTIVATED' : 'DEACTIVATED';

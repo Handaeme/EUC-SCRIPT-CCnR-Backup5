@@ -229,7 +229,7 @@ require_once 'app/views/layouts/sidebar.php';
                 <table id="dataTable" class="table" style="width:100%; border-collapse:collapse; font-size:12px;">
                     <thead>
                         <tr style="background:#f9fafb; text-align:left; color:#555;">
-                            <th style="padding:10px; border-bottom:2px solid #eee; width:100px;">Action</th>
+                            <th style="padding:10px; border-bottom:2px solid #eee; width:1px; white-space:nowrap;">Action</th>
                             <th style="padding:10px; border-bottom:2px solid #eee;">Maker</th>
                             <th style="padding:10px; border-bottom:2px solid #eee;">Ticket ID</th>
                             <th style="padding:10px; border-bottom:2px solid #eee;">Script No</th>

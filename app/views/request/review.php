@@ -306,6 +306,69 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
         </div>
     </div>
 
+    <?php if (!empty($newerVersionInfo)): 
+        // Map status to readable label
+        $statusMap = [
+            'CREATED' => 'Menunggu Approval SPV',
+            'APPROVED_SPV' => 'Menunggu Approval PIC',
+            'APPROVED_PIC' => 'Menunggu Approval Procedure',
+            'MINOR_REVISION' => 'Dikembalikan ke Maker (Minor Revision)',
+            'MAJOR_REVISION' => 'Dikembalikan ke Maker (Major Revision - Reset)',
+            'LIBRARY' => 'Sudah Published ke Library',
+            'COMPLETED' => 'Sudah Published ke Library',
+            'DRAFT' => 'Masih Draft',
+            'DRAFT_TEMP' => 'Masih Draft',
+        ];
+        $newerStatus = $newerVersionInfo['status'] ?? '';
+        $statusLabel = $statusMap[$newerStatus] ?? ucwords(strtolower(str_replace('_', ' ', $newerStatus)));
+        $newerRole = $newerVersionInfo['current_role'] ?? '';
+    ?>
+    <div id="version-guard-banner" style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border:2px solid #f59e0b; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 4px 12px rgba(245,158,11,0.2);">
+        <div style="display:flex; align-items:flex-start; gap:16px;">
+            <div style="flex-shrink:0; background:#f59e0b; color:white; border-radius:10px; padding:10px; display:flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div style="flex:1;">
+                <h3 style="margin:0 0 8px 0; font-size:16px; color:#92400e; font-weight:700;">⚠️ PERHATIAN: Script ini sudah memiliki versi yang lebih baru</h3>
+                <div style="background:white; border-radius:8px; padding:12px 16px; margin-bottom:12px; border:1px solid #fbbf24;">
+                    <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                        <tr>
+                            <td style="color:#92400e; font-weight:600; padding:3px 0; width:130px;">Script Number</td>
+                            <td style="color:#1e293b; font-weight:700; padding:3px 0;">: <?php echo htmlspecialchars($newerVersionInfo['script_number']); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="color:#92400e; font-weight:600; padding:3px 0;">Ticket ID</td>
+                            <td style="color:#1e293b; font-weight:700; padding:3px 0;">: <?php echo htmlspecialchars($newerVersionInfo['ticket_id']); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="color:#92400e; font-weight:600; padding:3px 0;">Status</td>
+                            <td style="padding:3px 0;">
+                                : <span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:4px; font-weight:700; font-size:12px;"><?php echo htmlspecialchars($statusLabel); ?></span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <p style="margin:0 0 12px 0; color:#a16207; font-size:12px;">Tombol Update Library / Minor / Major Revision di halaman ini sudah <strong>dinonaktifkan</strong>. Silakan gunakan versi terbaru.</p>
+                <?php 
+                    // Link to the correct page based on status
+                    $newerSt = $newerVersionInfo['status'] ?? '';
+                    if (in_array($newerSt, ['LIBRARY', 'COMPLETED', 'APPROVED_PROCEDURE'])) {
+                        $newerLink = '?controller=request&action=viewLibrary&id=' . htmlspecialchars($newerVersionInfo['id']);
+                    } else {
+                        $newerLink = '?controller=request&action=review_library_script&id=' . htmlspecialchars($newerVersionInfo['id']);
+                    }
+                ?>
+                <a href="<?php echo $newerLink; ?>" 
+                   style="display:inline-flex; align-items:center; gap:6px; background:#f59e0b; color:white; text-decoration:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:13px; transition:all 0.2s;"
+                   onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    Buka Versi Terbaru
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="grid-container" style="display:grid; grid-template-columns: 3fr 1fr; gap:25px; align-items: start;">
         
         <!-- LEFT COLUMN: SCRIPT CONTENT -->
@@ -888,11 +951,7 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <button type="button" onclick="makerConfirmFromReview('confirm')" style="width:100%; padding:12px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 2px 4px rgba(16,185,129,0.2);">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                Konfirmasi & Kirim ke Procedure
-                            </button>
-                            <button type="button" onclick="makerConfirmFromReview('reject')" style="width:100%; padding:12px; background:#fff; color:#dc2626; border:1px solid #fecaca; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                Tolak & Kembalikan
+                                Selesei Review & Kirim ke Procedure
                             </button>
                         </div>
                     </div>
@@ -900,33 +959,30 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                     <script>
                     function makerConfirmFromReview(decision) {
                         const requestId = <?php echo $request['id']; ?>;
-                        const isConfirm = decision === 'confirm';
-
+                        
                         Swal.fire({
-                            title: isConfirm ? 'Konfirmasi & Kirim ke Procedure?' : 'Tolak Konfirmasi?',
-                            html: isConfirm
-                                ? 'Script akan dikembalikan ke <b>Procedure</b> untuk di-publish ke Library.'
-                                : 'Script akan dikembalikan ke <b>Procedure</b> untuk direvisi ulang.',
-                            icon: isConfirm ? 'question' : 'warning',
+                            title: 'Selesai Review & Kirim?',
+                            html: 'Script akan dikirimkan kembali ke <b>Procedure</b> untuk di-publish ke Library.',
+                            icon: 'question',
                             showCancelButton: true,
-                            confirmButtonColor: isConfirm ? '#10b981' : '#dc2626',
+                            confirmButtonColor: '#10b981',
                             cancelButtonColor: '#aaa',
-                            confirmButtonText: isConfirm ? 'Ya, Konfirmasi!' : 'Ya, Tolak!',
+                            confirmButtonText: 'Ya, Kirim Sekarang!',
                             cancelButtonText: 'Batal'
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 fetch('index.php?controller=request&action=makerConfirm', {
                                     method: 'POST',
                                     headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ request_id: requestId, decision: decision })
+                                    body: JSON.stringify({ request_id: requestId, decision: 'confirm' })
                                 })
                                 .then(r => r.json())
                                 .then(data => {
                                     if (data.success) {
                                         Swal.fire({
-                                            title: isConfirm ? 'Dikonfirmasi!' : 'Ditolak',
+                                            title: 'Berhasil Dikirim!',
                                             text: data.message,
-                                            icon: isConfirm ? 'success' : 'info',
+                                            icon: 'success',
                                             confirmButtonText: 'OK, Kembali ke Dashboard',
                                             allowOutsideClick: false
                                         }).then(() => {
@@ -958,7 +1014,7 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                         </div>
 
                         <!-- Option 1: Update Library Direct -->
-                        <button type="button" onclick="submitLibraryUpdate()" style="width:100%; border:none; background:#3b82f6; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; transition:all 0.2s;">
+                        <button type="button" onclick="submitLibraryUpdate()" <?php if (!empty($newerVersionInfo)) echo 'disabled style="width:100%; border:none; background:#94a3b8; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; opacity:0.6;"'; else echo 'style="width:100%; border:none; background:#3b82f6; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; transition:all 0.2s;"'; ?>>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                             1. Update Library (Direct)
                         </button>
@@ -967,7 +1023,7 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                         </div>
 
                         <!-- Option 2: Minor Revision -->
-                        <button type="button" onclick="requestMinorRevision()" style="width:100%; border:none; background:#f97316; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; transition:all 0.2s;">
+                        <button type="button" onclick="requestMinorRevision()" <?php if (!empty($newerVersionInfo)) echo 'disabled style="width:100%; border:none; background:#94a3b8; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; opacity:0.6;"'; else echo 'style="width:100%; border:none; background:#f97316; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; transition:all 0.2s;"'; ?>>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                             2. Request Minor Revision
                         </button>
@@ -976,7 +1032,7 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                         </div>
 
                         <!-- Option 3: Major Revision -->
-                        <button type="button" onclick="requestMajorRevision()" style="width:100%; border:none; background:#dc2626; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; transition:all 0.2s;">
+                        <button type="button" onclick="requestMajorRevision()" <?php if (!empty($newerVersionInfo)) echo 'disabled style="width:100%; border:none; background:#94a3b8; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; opacity:0.6;"'; else echo 'style="width:100%; border:none; background:#dc2626; color:white; padding:12px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; transition:all 0.2s;"'; ?>>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                             3. Request Major Revision
                         </button>
@@ -1145,6 +1201,27 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                                     window.location.href = 'index.php?controller=dashboard';
                                 });
                                 
+                            } else if (data.error === 'newer_version_exists') {
+                                // [VERSION GUARD] Show warning popup with Audit Trail link
+                                Swal.fire({
+                                    title: 'Versi Lebih Baru Sudah Ada',
+                                    html: `<p style="color:#64748b; font-size:13px; margin-bottom:12px;">Script ini sudah memiliki versi yang lebih baru:</p>
+                                           <div style="background:#fef3c7; border:1px solid #fbbf24; border-radius:8px; padding:10px; margin-bottom:12px;">
+                                               <div style="font-weight:700; color:#92400e; font-size:14px;">\u2192 ${data.newer_script}</div>
+                                               <div style="color:#a16207; font-size:12px; margin-top:4px;">Status: ${data.newer_status}</div>
+                                           </div>
+                                           <p style="color:#64748b; font-size:12px;">Silakan gunakan versi terbaru untuk melakukan perubahan.</p>`,
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Lihat di Audit Trail',
+                                    cancelButtonText: 'Tutup',
+                                    confirmButtonColor: '#f59e0b',
+                                    cancelButtonColor: '#94a3b8'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = '?controller=audit&action=detail&id=' + data.newer_id;
+                                    }
+                                });
                             } else {
                                 Swal.fire('Error', data.error || 'Operation failed', 'error');
                             }
@@ -2400,12 +2477,17 @@ function handleRealtimeInput(e) {
     // Pass 1: Ancestry Check (STRICTLY RED PARENTS ONLY)
     let d = 0;
     while (current && current !== document.body && d < 5) {
-        // DEBUG: Check what we are looking at
-    // Logs removed
-        
         if (current.nodeType === 1) {
              // STRICT: Only consider parent if it is VISUALLY RED and NOT a deletion span
              if (isStyleRed(current) && !current.classList.contains('deletion-span')) {
+                // [FIX] Skip COMMITTED (non-draft) spans from previous reviewers
+                // Committed spans = have 'revision-span' class but NOT 'draft' class
+                // This covers both auto-red and highlight comments
+                const isCommitted = current.classList.contains('revision-span') && !current.classList.contains('draft');
+                if (isCommitted) {
+                    console.log('[DEBUG] Hit committed span from previous reviewer, skipping ancestry.');
+                    break; // Don't link new typing to old committed span
+                }
                 groupId = current.getAttribute('data-comment-id') || current.id;
                 if (groupId) {
                     console.log(`[DEBUG] Found Group ID: ${groupId}`);
@@ -2413,7 +2495,6 @@ function handleRealtimeInput(e) {
                 }
              } else {
                  // Stop identifying if we hit a non-red container (like original-content)
-                 // This prevents "Leaking" into black text
                  if (current.classList.contains('original-content') || !current.classList.contains('revision-span')) {
                      console.log("[DEBUG] Hit non-red boundary, stopping ancestry check.");
                      break; 
@@ -2428,8 +2509,12 @@ function handleRealtimeInput(e) {
     if (!groupId && target.nodeType === 1) {
         const prev = target.previousElementSibling;
         // [FIX] Skip deletion spans — they should NOT be treated as group siblings
+        // [FIX] Also skip COMMITTED spans from previous reviewers to prevent duplication
         if (prev && (prev.classList.contains('revision-span') || prev.style.color === 'red') && !prev.classList.contains('deletion-span')) {
-            groupId = prev.getAttribute('data-comment-id') || prev.id;
+            const prevIsCommitted = prev.classList.contains('revision-span') && !prev.classList.contains('draft');
+            if (!prevIsCommitted) {
+                groupId = prev.getAttribute('data-comment-id') || prev.id;
+            }
         }
     }
 
@@ -2504,6 +2589,9 @@ function handleRealtimeInput(e) {
                 if (!isActuallyRed) return; // Skip non-red text
                 // [FIX] Never include deletion spans in text aggregation
                 if (node.classList && node.classList.contains('deletion-span')) return;
+                // [FIX] Skip COMMITTED spans from previous reviewers
+                // Committed = has 'revision-span' class but NOT 'draft' class
+                if (node.classList && node.classList.contains('revision-span') && !node.classList.contains('draft')) return;
 
                 if (!uniqueNodes.has(node)) {
                     fullText += node.textContent;
@@ -4937,9 +5025,13 @@ function handleBeforeInput(e) {
             if (walker.nodeType === 1 && walker.classList.contains('revision-span') && walker.style.color === 'red'
                 && !walker.classList.contains('deletion-span')) { // [FIX] Never target deletion spans for text insertion
                 // [FIX] ZOMBIE CHECK V2: Check DELETED_SPANS and Detachment
-                // If span is in deleted set OR not in document (detached), ignore it.
                 if (DELETED_SPANS.has(walker.id) || !document.contains(walker)) {
                     targetSpan = null; 
+                // [FIX] Skip COMMITTED spans (revision-span WITHOUT draft class) from previous reviewers
+                // These should NOT absorb new typed text — instead, a fresh draft span will be created
+                } else if (!walker.classList.contains('draft')) {
+                    targetSpan = null;
+                    console.log(`[FIX] Skipping committed span ${walker.id} — will create new draft span instead`);
                 } else {
                     targetSpan = walker;
                 }
@@ -4949,7 +5041,8 @@ function handleBeforeInput(e) {
         }
         
         // Also check if we are directly inside a span but anchor is text
-        if(el.nodeType === 1 && el.classList.contains('revision-span')) targetSpan = el;
+        // [FIX] Only use draft spans as target, skip committed spans from previous reviewers
+        if(el.nodeType === 1 && el.classList.contains('revision-span') && el.classList.contains('draft')) targetSpan = el;
 
         if (targetSpan) {
             // [FIX] INSERT at cursor position inside existing span (not just append)
@@ -6884,8 +6977,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `,
             icon: 'info',
+            showCancelButton: true,
             confirmButtonText: 'OK, Mengerti',
-            confirmButtonColor: '#0284c7'
+            cancelButtonText: 'Lihat di Audit Trail',
+            confirmButtonColor: '#0284c7',
+            cancelButtonColor: '#f59e0b',
+            reverseButtons: true
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                const dupId = urlParams.get('dup_id');
+                if (dupId) {
+                    window.location.href = '?controller=audit&action=detail&id=' + dupId;
+                }
+            }
         });
         
         // Clean URL to prevent popup on refresh

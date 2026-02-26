@@ -17,16 +17,53 @@
         <?php endif; ?>
     </div>
 
-    <!-- Alert Messages -->
-    <?php if (isset($_GET['success'])): ?>
-        <div style="background:#dcfce7; color:#166534; padding:10px; border-radius:4px; margin-bottom:20px;">
-            Success: <?php echo htmlspecialchars($_GET['success']); ?>
+    <!-- Alert Messages (Custom Modal) -->
+    <?php if (isset($_GET['success']) || isset($_GET['error'])): ?>
+    <div id="dynamicAlertModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; backdrop-filter:blur(4px); display:flex; justify-content:center; align-items:center;">
+        <div style="background:white; border-radius:12px; width:400px; max-width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); overflow:hidden; animation:modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div style="padding:40px 24px 24px 24px; text-align:center;">
+                <?php if (isset($_GET['success'])): ?>
+                    <div style="display:flex; justify-content:center; margin-bottom:20px;">
+                        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <h3 style="margin:0 0 10px; color:#1f2937; font-size:20px; font-weight:700;">Berhasil!</h3>
+                    <p style="margin:0; color:#6b7280; font-size:14px;"><?php echo htmlspecialchars($_GET['success']); ?></p>
+                <?php else: ?>
+                    <div style="display:flex; justify-content:center; margin-bottom:20px;">
+                        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3 style="margin:0 0 10px; color:#1f2937; font-size:20px; font-weight:700;">Gagal</h3>
+                    <p style="margin:0; color:#6b7280; font-size:14px;"><?php echo htmlspecialchars($_GET['error']); ?></p>
+                <?php endif; ?>
+                
+                <div style="margin-top:25px;">
+                    <button onclick="closeAlertModal()" style="background:#dc2626; border:none; padding:8px 30px; border-radius:6px; font-weight:600; color:white; cursor:pointer; font-size:14px; transition:all 0.2s; box-shadow:0 1px 2px rgba(220,38,38,0.2);">OK</button>
+                </div>
+            </div>
         </div>
-    <?php endif; ?>
-    <?php if (isset($_GET['error'])): ?>
-        <div style="background:#fee2e2; color:#b91c1c; padding:10px; border-radius:4px; margin-bottom:20px;">
-            Error: <?php echo htmlspecialchars($_GET['error']); ?>
-        </div>
+    </div>
+    <script>
+        function closeAlertModal() {
+            const modal = document.getElementById('dynamicAlertModal');
+            if (modal) modal.style.display = 'none';
+            // Clean URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('success');
+            url.searchParams.delete('error');
+            window.history.replaceState({}, document.title, url);
+        }
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+            closeAlertModal();
+        }, 3000);
+    </script>
     <?php endif; ?>
 
     <div class="card">
@@ -246,11 +283,10 @@
                                     View
                                 </button>
                                 <?php if ($isProcedure): ?>
-                                <a href="?controller=template&action=delete&id=<?php echo $t['id']; ?>" 
-                                   onclick="return confirm('Are you sure you want to delete this template?');"
-                                   style="text-decoration:none; color:#dc2626; font-weight:bold;">
+                                <button onclick="confirmDeleteTemplate(<?php echo $t['id']; ?>)" 
+                                        style="background:none; border:none; color:#dc2626; font-weight:bold; cursor:pointer; font-size:13px; display:inline-flex; align-items:center;">
                                     Delete
-                                </a>
+                                </button>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -326,11 +362,11 @@
                         </div>
                         
                         <?php if ($isProcedure): ?>
-                        <a href="?controller=template&action=delete&id=<?php echo $t['id']; ?>" 
-                           onclick="return confirm('Delete template?');"
-                           style="color:#dc2626; font-size:13px; text-decoration:none; opacity:0.8;">
-                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </a>
+                        <button onclick="confirmDeleteTemplate(<?php echo $t['id']; ?>)" 
+                                style="background:none; border:none; color:#dc2626; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; opacity:0.8; padding:0;">
+                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                             Delete
+                        </button>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -519,6 +555,38 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
+<!-- Custom Delete Confirmation Modal (Centered) -->
+<div id="deleteConfirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; backdrop-filter:blur(4px); justify-content:center; align-items:center;">
+    <div style="background:white; border-radius:12px; width:400px; max-width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden; animation:modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div style="padding:40px 24px 24px 24px; text-align:center;">
+            <div style="display:flex; justify-content:center; margin-bottom:20px;">
+                <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            
+            <h3 style="margin:0 0 10px; color:#1f2937; font-size:20px; font-weight:700;">Hapus Template?</h3>
+            
+            <p style="margin:0; color:#6b7280; font-size:14px; line-height:1.5;">
+                Apakah Anda yakin ingin menghapus template ini? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            
+            <div style="margin-top:25px; display:flex; justify-content:center; gap:12px;">
+                <button onclick="closeDeleteModal()" style="padding:8px 30px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600; color:#475569; background:white; cursor:pointer; font-size:14px; transition:all 0.2s;">Batal</button>
+                <button id="confirmDeleteBtn" style="padding:8px 30px; border:none; border-radius:6px; font-weight:600; color:white; background:#dc2626; cursor:pointer; font-size:14px; transition:all 0.2s; box-shadow:0 1px 2px rgba(220,38,38,0.2);">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+@keyframes modalPop {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
 <style>
     /* Table Styles for Preview */
     #previewContent table { width:100%; border-collapse:collapse; margin-bottom:20px; font-size:12px; }
@@ -613,6 +681,39 @@ function openPreview(url, ext) {
             loadingDiv.style.display = 'none';
             contentDiv.innerHTML = '<p style="color:red;">Failed to load file.</p>';
         });
+}
+
+let templateIdToDelete = null;
+
+function confirmDeleteTemplate(id) {
+    templateIdToDelete = id;
+    const modal = document.getElementById('deleteConfirmModal');
+    modal.style.display = 'flex'; // Use flex to center
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    templateIdToDelete = null;
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (templateIdToDelete) {
+        // Change button state to loading
+        this.innerHTML = '<svg class="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="animation: spin 1s linear infinite; margin-right:6px;"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4 31.4" stroke-linecap="round"></circle></svg> Menghapus...';
+        this.style.opacity = '0.7';
+        this.disabled = true;
+        
+        // Redirect to delete action
+        window.location.href = '?controller=template&action=delete&id=' + templateIdToDelete;
+    }
+});
+
+// Add spin animation if not exists
+if (!document.getElementById('spinner-style')) {
+    const style = document.createElement('style');
+    style.id = 'spinner-style';
+    style.innerHTML = '@keyframes spin { 100% { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
 }
 
 function switchTab(activeIndex) {

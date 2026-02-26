@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EUC Script CCnR</title>
     <link rel="stylesheet" href="public/css/style.css?v=9">
-    <!-- Flaticon with Local Fallback -->
-    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css' onerror="this.onerror=null;this.href='public/css/uicons-regular-rounded.css';">
-    
+    <!-- Flaticon Local -->
+    <link rel='stylesheet' href='public/css/uicons-regular-rounded.css'>
+	
     <!-- Custom Local Modal (Replaces SweetAlert2 for Offline Compatibility) -->
     <script>
         // Inject Custom Styles for Local Modal

@@ -76,7 +76,7 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
 
 <!-- Load SheetJS Style (with Styling Support) -->
 <script src="assets/js/xlsx.full.min.js"></script>
-<script>if(typeof XLSX==='undefined'){document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.6.4/dist/xlsx.bundle.js"><\/scr'+'ipt>')}</script>
+<script src="public/js/xlsx.bundle.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.6.4/dist/xlsx.bundle.js';"></script>
 
 <script>
 // 1. FOR FILE UPLOAD (Sheets)
@@ -929,13 +929,19 @@ function downloadContentAsExcel() {
             <!-- Approval History -->
             <?php if (!empty($logs)): ?>
             <div class="card" style="margin-bottom:20px;">
-                <h4 style="border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:20px; margin-top:0; display:flex; align-items:center; gap:8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    Request History
-                </h4>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:20px;">
+                    <h4 style="margin:0; display:flex; align-items:center; gap:8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Request History
+                    </h4>
+                    <button id="lib-history-sort-btn" onclick="toggleLibHistorySort()" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s;" title="Toggle sort order">
+                        <svg id="lib-sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+                        <span id="lib-sort-label">Newest First</span>
+                    </button>
+                </div>
                 
                 <?php
                 // [NEW] Build User Map for ID Replacement
@@ -955,8 +961,11 @@ function downloadContentAsExcel() {
                     <!-- Vertical Line -->
                     <div style="position:absolute; left:24px; top:0; bottom:0; width:2px; background:#e5e7eb;"></div>
                     
-                    <div style="position:relative;">
-                        <?php foreach ($logs as $index => $log): 
+                    <div id="lib-history-container" style="position:relative;">
+                        <?php 
+                        // Default: Newest First
+                        $sortedLibLogs = array_reverse($logs);
+                        foreach ($sortedLibLogs as $index => $log): 
                             // Skip draft-related entries (noise in Library view)
                             $rawAct = $log['action_type'] ?? $log['action'] ?? '';
                             if (in_array($rawAct, ['DRAFT_INIT', 'DRAFT_SAVED', 'DRAFT_STARTED'])) continue;
@@ -972,7 +981,7 @@ function downloadContentAsExcel() {
                             $rawAction = $log['action_type'] ?? $log['action'] ?? 'Status Update';
                             $actionMap = [
                                 'CREATED' => 'Request Submitted',
-                                'SUBMIT_REQUEST' => 'Request Submitted', // Handle legacy
+                                'SUBMIT_REQUEST' => 'Request Submitted',
                                 'APPROVE_SPV' => 'Approved (SPV)',
                                 'APPROVED_SPV' => 'Approved (SPV)',
                                 'APPROVE_PIC' => 'Approved (PIC)',
@@ -984,11 +993,68 @@ function downloadContentAsExcel() {
                                 'MINOR_REVISION' => 'Minor Revision',
                                 'MAJOR_REVISION' => 'Major Revision (Reset)',
                                 'REJECTED' => 'Rejected',
+                                'DELETED' => 'Deleted',
+                                'CANCELLED' => 'Cancelled',
+                                'SEND_TO_MAKER_CONFIRMATION' => 'Sent to Maker for Confirmation',
+                                'MAKER_CONFIRM' => 'Maker Confirmed',
+                                'MAKER_REJECT_CONFIRMATION' => 'Maker Rejected Confirmation',
                                 'DRAFT_INIT' => 'Draft Started',
                                 'DRAFT_SAVED' => 'Draft Saved',
-                                'LIBRARY_UPDATE' => 'Library Updated'
+                                'LIBRARY_UPDATE' => 'Library Updated',
+                                'REUSE_SCRIPT' => 'Reuse Script (dari Library)',
+                                'REVISION_DRAFT_CREATED' => 'Revision Draft Created',
+                                'ACTIVATED' => 'Activated',
+                                'DEACTIVATED' => 'Deactivated',
                             ];
+                            
                             $displayAction = $actionMap[$rawAction] ?? ucwords(strtolower(str_replace('_', ' ', $rawAction)));
+                            
+                            // [FIX] Auto-detect resubmit origin
+                            if ($rawAction === 'RESUBMIT' || $rawAction === 'SUBMIT_REQUEST' || $rawAction === 'CREATED') {
+                                $isResubmit = false;
+                                $resubmitOrigin = '';
+                                $thisDate = $log['created_at'];
+                                $thisTs = ($thisDate instanceof \DateTime) ? $thisDate->getTimestamp() : strtotime($thisDate);
+                                
+                                foreach ($logs as $prevLog) {
+                                    $prevDate = $prevLog['created_at'];
+                                    $prevTs = ($prevDate instanceof \DateTime) ? $prevDate->getTimestamp() : strtotime($prevDate);
+                                    if ($prevTs >= $thisTs) continue;
+                                    
+                                    $prevAction = $prevLog['action_type'] ?? $prevLog['action'] ?? '';
+                                    $prevBy = $prevLog['full_name'] ?? $prevLog['user_id'] ?? '';
+                                    
+                                    if (in_array($prevAction, ['REVISION', 'MINOR_REVISION', 'MAJOR_REVISION', 'MAKER_REJECT_CONFIRMATION', 'REJECTED'])) {
+                                        $isResubmit = true;
+                                        $originMap = [
+                                            'REVISION' => 'Revision',
+                                            'MINOR_REVISION' => 'Minor Revision',
+                                            'MAJOR_REVISION' => 'Major Revision',
+                                            'MAKER_REJECT_CONFIRMATION' => 'Maker Rejection',
+                                            'REJECTED' => 'Rejection',
+                                        ];
+                                        $resubmitOrigin = ($originMap[$prevAction] ?? $prevAction) . ' by ' . $prevBy;
+                                    }
+                                }
+                                
+                                if ($isResubmit) {
+                                    $displayAction = 'Re-submitted';
+                                    if ($resubmitOrigin) $displayAction .= ' (dari ' . $resubmitOrigin . ')';
+                                }
+                            }
+                            
+                            // [FIX] Override dot color based on action type
+                            if (strpos($rawAction, 'REJECT') !== false || $rawAction === 'DELETED' || $rawAction === 'CANCELLED') {
+                                $roleColor = '#dc2626';
+                            } elseif ($rawAction === 'REVISION' || $rawAction === 'MINOR_REVISION' || $rawAction === 'MAJOR_REVISION') {
+                                $roleColor = '#dc2626';
+                            } elseif ($rawAction === 'ACTIVATED') {
+                                $roleColor = '#f59e0b';
+                            } elseif ($rawAction === 'DEACTIVATED') {
+                                $roleColor = '#6b7280';
+                            } elseif ($rawAction === 'REUSE_SCRIPT' || $rawAction === 'REVISION_DRAFT_CREATED') {
+                                $roleColor = '#0ea5e9';
+                            }
                         ?>
                         <div style="position:relative; padding-left:35px; padding-bottom:25px;">
                             <!-- Dot -->
@@ -999,6 +1065,17 @@ function downloadContentAsExcel() {
                                 <div style="font-weight:700; color:#1f2937; font-size:13px; margin-bottom:4px;">
                                     <?php echo htmlspecialchars($displayAction); ?>
                                 </div>
+                                <?php 
+                                // Show script number for version-related actions
+                                $versionActions = ['REUSE_SCRIPT', 'REVISION_DRAFT_CREATED', 'MINOR_REVISION', 'MAJOR_REVISION', 'LIBRARY_UPDATE', 'LIBRARY'];
+                                if (in_array($rawAction, $versionActions)):
+                                    $logScriptNum = $log['req_script_number'] ?? $log['script_number'] ?? '';
+                                    if ($logScriptNum):
+                                ?>
+                                    <div style="font-size:11px; color:#0ea5e9; font-weight:600; margin-bottom:3px; display:inline-flex; align-items:center; gap:4px;">
+                                        → <?php echo htmlspecialchars($logScriptNum); ?>
+                                    </div>
+                                <?php endif; endif; ?>
                                 <div style="font-size:12px; color:#666; display: flex; flex-direction: column; gap: 2px;">
                                     <div>
                                         by <span style="font-weight:600; color:<?php echo $roleColor; ?>"><?php echo htmlspecialchars($log['full_name'] ?? $log['user_id']); ?></span>
@@ -1056,6 +1133,31 @@ function downloadContentAsExcel() {
 
 
 <script>
+    // Library History Sort Toggle
+    let libHistorySortNewest = true;
+    function toggleLibHistorySort() {
+        const container = document.getElementById('lib-history-container');
+        if (!container) return;
+        const items = Array.from(container.children);
+        items.reverse();
+        items.forEach(item => container.appendChild(item));
+        libHistorySortNewest = !libHistorySortNewest;
+        const label = document.getElementById('lib-sort-label');
+        const icon = document.getElementById('lib-sort-icon');
+        if (label) label.textContent = libHistorySortNewest ? 'Newest First' : 'Oldest First';
+        if (icon) {
+            icon.innerHTML = libHistorySortNewest 
+                ? '<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/>'
+                : '<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>';
+        }
+        const btn = document.getElementById('lib-history-sort-btn');
+        if (btn) {
+            btn.style.background = '#eff6ff';
+            btn.style.borderColor = '#93c5fd';
+            setTimeout(() => { btn.style.background = '#f8fafc'; btn.style.borderColor = '#e2e8f0'; }, 300);
+        }
+    }
+
     function toggleActiveStatus(requestId, newStatus) {
         if (newStatus === 1) {
             // ACTIVATE: Show Custom Date Picker Modal
@@ -1191,6 +1293,39 @@ function downloadContentAsExcel() {
                 `;
                 document.body.appendChild(overlay);
                 
+            } else if (data.error === 'newer_version_exists') {
+                // [VERSION GUARD] Show popup for newer version
+                const overlay = document.createElement('div');
+                overlay.id = 'version-guard-overlay';
+                overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center; animation:fadeIn 0.2s;';
+                overlay.innerHTML = `
+                    <div style="background:white; border-radius:16px; padding:30px; width:380px; max-width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center; animation:scaleIn 0.25s ease-out;">
+                        <div style="margin-bottom:16px;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
+                        <h3 style="margin:0 0 10px 0; font-size:18px; color:#1e293b; font-weight:700;">Versi Lebih Baru Sudah Ada</h3>
+                        <p style="margin:0 0 8px 0; color:#64748b; font-size:13px;">Script ini sudah memiliki versi yang lebih baru:</p>
+                        <div style="background:#fef3c7; border:1px solid #fbbf24; border-radius:8px; padding:10px; margin:0 0 16px 0;">
+                            <div style="font-weight:700; color:#92400e; font-size:14px;">\u2192 ${data.newer_script}</div>
+                            <div style="color:#a16207; font-size:12px; margin-top:4px;">Status: ${data.newer_status}</div>
+                        </div>
+                        <p style="margin:0 0 20px 0; color:#64748b; font-size:12px;">Silakan gunakan versi terbaru untuk melakukan perubahan.</p>
+                        <div style="display:flex; gap:10px; justify-content:center;">
+                            <button onclick="document.getElementById('version-guard-overlay').remove()" 
+                                    style="background:#f1f5f9; color:#64748b; border:none; padding:10px 20px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;"
+                                    onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                Tutup
+                            </button>
+                            <button onclick="window.location.href='?controller=audit&action=detail&id=${data.newer_id}'" 
+                                    style="background:#f59e0b; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"
+                                    onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                Lihat di Audit Trail
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
             } else {
                 alert('Failed: ' + (data.error || 'Unknown error'));
             }
