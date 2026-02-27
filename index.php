@@ -190,7 +190,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
       $dept    = strtoupper(trim($user['DEPT'] ?? ''));
       $divisi  = trim($user['DIVISI'] ?? '');
 
-      if ($jobFunc === 'DEPARTMENT HEAD') {
+      if (stripos($divisi, 'Quality Analysis Monitoring') !== false || $dept === 'PROCEDURE') {
+          $derivedRole = 'PROCEDURE';
+          $groupName = $user['GROUP'] ?? '';
+          $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
+      } elseif ($jobFunc === 'DEPARTMENT HEAD') {
           $derivedRole = 'MAKER';
           $roleLabel = 'DEPARTMENT HEAD';
       } elseif ($jobFunc === 'DIVISION HEAD') {
@@ -199,10 +203,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
       } elseif ($dept === 'PIC') {
           $derivedRole = 'PIC';
           $roleLabel = 'Coordinator Script';
-      } elseif (stripos($divisi, 'Quality Analysis Monitoring') !== false) {
-          $derivedRole = 'PROCEDURE';
-          $groupName = $user['GROUP'] ?? '';
-          $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
       } elseif ($dept === 'ADMIN') {
           $derivedRole = 'ADMIN';
           $roleLabel = 'ADMIN';
@@ -257,7 +257,11 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
     $divisi  = trim($_SESSION['DIVISI'] ?? '');
 
     // Determine Role using the exact same logic as local login
-    if ($jobFunc === 'DEPARTMENT HEAD') {
+    if (stripos($divisi, 'Quality Analysis Monitoring') !== false || $dept === 'PROCEDURE') {
+        $derivedRole = 'PROCEDURE';
+        $groupName = $_SESSION['GROUP'] ?? '';
+        $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
+    } elseif ($jobFunc === 'DEPARTMENT HEAD') {
         $derivedRole = 'MAKER';
         $roleLabel = 'DEPARTMENT HEAD';
     } elseif ($jobFunc === 'DIVISION HEAD') {
@@ -266,10 +270,6 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
     } elseif ($dept === 'PIC') {
         $derivedRole = 'PIC';
         $roleLabel = 'Coordinator Script';
-    } elseif (stripos($divisi, 'Quality Analysis Monitoring') !== false || $dept === 'PROCEDURE') {
-        $derivedRole = 'PROCEDURE';
-        $groupName = $_SESSION['GROUP'] ?? '';
-        $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
     } elseif ($dept === 'ADMIN') {
         $derivedRole = 'ADMIN';
         $roleLabel = 'ADMIN';
