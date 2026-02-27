@@ -49,8 +49,8 @@ class RequestModel {
 
     // NEW: Fetch PICs (Person in Charge) for SPV selection
     public function getPICs() {
-        // FIX: Case-insensitive check
-        $sql = "SELECT USERID as userid, FULLNAME as fullname FROM tbluser WHERE UPPER(DEPT) = 'PIC' ORDER BY FULLNAME ASC";
+        // FIX: Case-insensitive check and TRIM spaces (e.g., 'PIC ')
+        $sql = "SELECT USERID as userid, FULLNAME as fullname FROM tbluser WHERE TRIM(UPPER(DEPT)) = 'PIC' OR UPPER(DEPT) LIKE '%PIC%' ORDER BY FULLNAME ASC";
         $stmt = db_query($this->conn, $sql);
         $users = [];
         if ($stmt) {
