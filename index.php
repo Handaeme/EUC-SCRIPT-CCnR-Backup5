@@ -194,15 +194,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
           $derivedRole = 'PROCEDURE';
           $groupName = $user['GROUP'] ?? '';
           $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
+      } elseif ($dept === 'PIC') {
+          $derivedRole = 'PIC';
+          $roleLabel = 'Coordinator Script';
       } elseif ($jobFunc === 'DEPARTMENT HEAD') {
           $derivedRole = 'MAKER';
           $roleLabel = 'DEPARTMENT HEAD';
       } elseif ($jobFunc === 'DIVISION HEAD') {
           $derivedRole = 'SPV';
           $roleLabel = 'DIVISION HEAD';
-      } elseif ($dept === 'PIC') {
-          $derivedRole = 'PIC';
-          $roleLabel = 'Coordinator Script';
       } elseif ($dept === 'ADMIN') {
           $derivedRole = 'ADMIN';
           $roleLabel = 'ADMIN';
@@ -261,15 +261,15 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
         $derivedRole = 'PROCEDURE';
         $groupName = $_SESSION['GROUP'] ?? '';
         $roleLabel = !empty($groupName) ? $groupName : 'CPMS/QPM';
+    } elseif ($dept === 'PIC') {
+        $derivedRole = 'PIC';
+        $roleLabel = 'Coordinator Script';
     } elseif ($jobFunc === 'DEPARTMENT HEAD') {
         $derivedRole = 'MAKER';
         $roleLabel = 'DEPARTMENT HEAD';
     } elseif ($jobFunc === 'DIVISION HEAD') {
         $derivedRole = 'SPV';
         $roleLabel = 'DIVISION HEAD';
-    } elseif ($dept === 'PIC') {
-        $derivedRole = 'PIC';
-        $roleLabel = 'Coordinator Script';
     } elseif ($dept === 'ADMIN') {
         $derivedRole = 'ADMIN';
         $roleLabel = 'ADMIN';
