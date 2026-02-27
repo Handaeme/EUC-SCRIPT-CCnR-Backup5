@@ -876,3 +876,6 @@
 [2026-02-27 09:28:26] Attempted login for user: proc01
 [2026-02-27 09:28:26] Local login successful for user: proc01
 [2026-02-27 09:28:26] Redirecting proc01 to index.php
+[2026-02-27 12:58:28] Attempted login for user: HS1234X
+[2026-02-27 12:58:28] Local login successful for user: HS1234X
+[2026-02-27 12:58:28] Redirecting HS1234X to index.php
