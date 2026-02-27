@@ -1862,6 +1862,15 @@ async function downloadReviewExcel() {
 
     const scriptNum = '<?php echo htmlspecialchars($request["script_number"]); ?>';
 
+    // [FIX] Temporarily show ALL hidden tab panes so cloneNode picks up content
+    const hiddenPanes = [];
+    document.querySelectorAll('.media-pane, .sheet-pane, .review-tab-content, [id^="tab-media-"], [id^="tab-"]').forEach(el => {
+        if (el.style.display === 'none' || getComputedStyle(el).display === 'none') {
+            hiddenPanes.push({ el, orig: el.style.display });
+            el.style.display = 'block';
+        }
+    });
+
     let sheets = Array.from(document.querySelectorAll('.media-pane, .sheet-pane, .review-tab-content'));
     sheets = [...new Set(sheets)];
     if (sheets.length === 0) {
@@ -1869,6 +1878,8 @@ async function downloadReviewExcel() {
     }
     
     if (sheets.length === 0) {
+        // Restore hidden panes before returning
+        hiddenPanes.forEach(p => p.el.style.display = p.orig);
         Swal.fire('Error', 'No content available to download', 'warning');
         return;
     }
@@ -2051,6 +2062,8 @@ async function downloadReviewExcel() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    // [FIX] Restore hidden panes
+    hiddenPanes.forEach(p => p.el.style.display = p.orig);
     
     console.log('✓ ExcelJS Download complete!');
 }

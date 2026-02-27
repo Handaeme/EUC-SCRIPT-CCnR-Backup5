@@ -410,8 +410,7 @@ class RequestController extends Controller {
         $updateResult = $reqModel->updateStatus($req['id'], $nextStatus, $nextRole, $_SESSION['user']['userid']);
         
         if (!$updateResult) {
-            $errors = sqlsrv_errors(); // or db_errors() wrapper
-            if (!$errors && function_exists('db_errors')) $errors = db_errors();
+            $errors = function_exists('db_errors') ? db_errors() : 'Unknown Database Error';
             
             error_log("Failed to update status: " . print_r($errors, true));
             echo json_encode(['success'=>false, 'error'=>'Gagal mengupdate status tiket. Detail: ' . print_r($errors, true)]);

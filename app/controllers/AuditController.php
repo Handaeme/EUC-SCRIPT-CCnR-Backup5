@@ -437,7 +437,44 @@ class AuditController extends Controller {
         $infoHtml .= '</table></body></html>';
         $sheets[] = ['name' => 'Request Info', 'html' => $infoHtml];
 
-        // ====== SHEETS PER MEDIA CHANNEL ======
+        // ====== ASSEMBLE SINGLE-SHEET HTML EXCEL ======
+        $filename = 'Audit_Detail_' . preg_replace('/[^a-zA-Z0-9-]/', '_', $ticketId);
+        if ($selectedVer > 0) $filename .= '_V' . $selectedVer;
+        $filename .= '_' . date('Ymd_His');
+
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '.xls"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+        echo '<head>';
+        echo '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+        echo '<!--[if gte mso 9]><xml>';
+        echo '<x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Audit Detail</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>';
+        echo '</xml><![endif]-->';
+        echo '<style>';
+        echo 'body, table { font-family: "Times New Roman", serif; font-size: 11pt; }';
+        echo 'table { border-collapse: collapse; margin-bottom: 20px; width: 100%; }';
+        echo 'th, td { border: 1px solid #000000; padding: 8px; vertical-align: top; }';
+        echo 'th { background-color: #f2f2f2; font-weight: bold; text-align: left; }';
+        echo '.text { mso-number-format:"\@"; }';
+        echo '</style>';
+        echo '</head>';
+        echo '<body>';
+
+        // 1. General Info
+        echo '<h2>Ticket Information</h2>';
+        echo '<table>';
+        echo '<tr><th width="150">Ticket ID</th><td class="text">' . htmlspecialchars($ticketId) . '</td></tr>';
+        echo '<tr><th>Script Number</th><td class="text">' . htmlspecialchars($req['script_number'] ?? '-') . '</td></tr>';
+        echo '<tr><th>Title</th><td>' . htmlspecialchars($req['title'] ?? '-') . '</td></tr>';
+        echo '<tr><th>Status</th><td>' . htmlspecialchars($req['status'] ?? '-') . '</td></tr>';
+        echo '</table><br>';
+
+        // 2. Script Content Versions
+        echo '<h2>Script History / Content</h2>';
+        
         if (($req['mode'] ?? '') !== 'FILE_UPLOAD' && !empty($content['all_versions'])) {
             // Group all versions by media
             $mediaGroups = [];
@@ -448,17 +485,15 @@ class AuditController extends Controller {
             }
 
             foreach ($mediaGroups as $media => $versions) {
-                $mediaHtml = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>';
-                $mediaHtml .= '<table border="1" style="border-collapse:collapse;">';
-                
-                // Header row
-                $mediaHtml .= '<tr>';
-                $mediaHtml .= '<th style="' . $headerStyle . ' width:60px;">No</th>';
-                $mediaHtml .= '<th style="' . $headerStyle . ' width:120px;">Tahap</th>';
-                $mediaHtml .= '<th style="' . $headerStyle . ' width:150px;">User</th>';
-                $mediaHtml .= '<th style="' . $headerStyle . ' width:150px;">Tanggal</th>';
-                $mediaHtml .= '<th style="' . $headerStyle . ' width:500px; mso-number-format:\'@\';">Isi Script</th>';
-                $mediaHtml .= '</tr>';
+                echo '<h3>Media: ' . htmlspecialchars($media) . '</h3>';
+                echo '<table>';
+                echo '<tr>';
+                echo '<th width="60">No</th>';
+                echo '<th width="120">Tahap</th>';
+                echo '<th width="150">User</th>';
+                echo '<th width="150">Tanggal</th>';
+                echo '<th width="500">Isi Script</th>';
+                echo '</tr>';
 
                 $no = 1;
                 foreach ($versions as $ver) {
@@ -466,7 +501,6 @@ class AuditController extends Controller {
                     $user = $ver['user_full_name'] ?? $ver['version_user'] ?? $ver['created_by'] ?? '-';
                     $date = $ver['formatted_date'] ?? '';
 
-                    // Stage display name
                     $stageDisplay = $stage;
                     if (stripos($stage, 'MAKER') !== false || $stage === 'DRAFT' || $stage === 'CREATED') $stageDisplay = 'MAKER';
                     elseif (stripos($stage, 'SPV') !== false) $stageDisplay = 'SPV';
@@ -474,58 +508,43 @@ class AuditController extends Controller {
                     elseif (stripos($stage, 'PROC') !== false) $stageDisplay = 'PROCEDURE';
 
                     $cleanContent = $cleanHtml($ver['content']);
-                    // Convert newlines for Excel
                     $excelContent = str_replace(["\r\n", "\r", "\n"], "<br style='mso-data-placement:same-cell;' />", htmlspecialchars($cleanContent));
 
-                    $mediaHtml .= '<tr style="' . $cellStyle . '">';
-                    $mediaHtml .= '<td style="' . $cellStyle . ' text-align:center;">' . $no++ . '</td>';
-                    $mediaHtml .= '<td style="' . $cellStyle . '">' . htmlspecialchars($stageDisplay) . '</td>';
-                    $mediaHtml .= '<td style="' . $cellStyle . '">' . htmlspecialchars($user) . '</td>';
-                    $mediaHtml .= '<td style="' . $cellStyle . '">' . $fmtDate($date) . '</td>';
-                    $mediaHtml .= '<td style="' . $cellStyle . ' mso-number-format:\'@\';">' . $excelContent . '</td>';
-                    $mediaHtml .= '</tr>';
+                    echo '<tr>';
+                    echo '<td style="text-align:center;">' . $no++ . '</td>';
+                    echo '<td>' . htmlspecialchars($stageDisplay) . '</td>';
+                    echo '<td>' . htmlspecialchars($user) . '</td>';
+                    echo '<td>' . $fmtDate($date) . '</td>';
+                    echo '<td>' . $excelContent . '</td>';
+                    echo '</tr>';
                 }
-
-                $mediaHtml .= '</table></body></html>';
-                
-                $safeMediaName = preg_replace('/[:\\\\\/\?\*\[\]]/', '_', $media);
-                $sheets[] = ['name' => substr($safeMediaName, 0, 31), 'html' => $mediaHtml];
+                echo '</table><br>';
             }
         } elseif (($req['mode'] ?? '') === 'FILE_UPLOAD' && !empty($content['versions'])) {
-            // File upload: Show ACTUAL CONTENT per version per sheet
-            // Each version has HTML content containing table data with possible red spans (reviewer additions)
-            
-            // Helper: Clean HTML for Excel output (keep red text, remove strikethrough)
+            // File upload: Show ACTUAL CONTENT per version
             $cleanFileHtml = function($html) {
                 if (empty($html)) return '<table border="1"><tr><td>(Empty)</td></tr></table>';
                 
-                // 1. Remove deletion spans entirely (strikethrough text)
+                // Clean HTML
                 $html = preg_replace('/<span[^>]*class="[^"]*deletion-span[^"]*"[^>]*>.*?<\/span>/is', '', $html);
                 $html = preg_replace('/<del>(.*?)<\/del>/is', '', $html);
                 $html = preg_replace('/<s>(.*?)<\/s>/is', '', $html);
                 $html = preg_replace('/<strike>(.*?)<\/strike>/is', '', $html);
-                // Remove elements with line-through style
                 $html = preg_replace('/<[^>]*style="[^"]*text-decoration:\s*line-through[^"]*"[^>]*>.*?<\/[^>]*>/is', '', $html);
                 
-                // 2. Convert revision spans / red spans to <font color=red><b>
                 $html = preg_replace('/<span[^>]*class="[^"]*revision-span[^"]*"[^>]*>(.*?)<\/span>/is', '<font color="#FF0000"><b>$1</b></font>', $html);
                 $html = preg_replace('/<span[^>]*class="[^"]*inline-comment[^"]*"[^>]*>(.*?)<\/span>/is', '<font color="#FF0000"><b>$1</b></font>', $html);
                 $html = preg_replace('/<span[^>]*style="[^"]*color:\s*red[^"]*"[^>]*>(.*?)<\/span>/is', '<font color="#FF0000"><b>$1</b></font>', $html);
                 $html = preg_replace('/<span[^>]*style="[^"]*color:\s*#ff0000[^"]*"[^>]*>(.*?)<\/span>/is', '<font color="#FF0000"><b>$1</b></font>', $html);
                 
-                // 3. Remove UI elements (buttons, tab nav, badges)
                 $html = preg_replace('/<div[^>]*class="[^"]*sheet-tabs-nav[^"]*"[^>]*>.*?<\/div>/is', '', $html);
                 $html = preg_replace('/<button[^>]*>.*?<\/button>/is', '', $html);
-                
-                // 4. Remove remaining non-red spans (keep content)
                 $html = preg_replace('/<span[^>]*>(.*?)<\/span>/is', '$1', $html);
                 
-                // 5. Extract just the table if present
                 if (preg_match('/<table[\s\S]*<\/table>/is', $html, $tableMatch)) {
                     return $tableMatch[0];
                 }
                 
-                // If no table found, wrap content in a simple table
                 $html = preg_replace('/<div[^>]*>/i', '', $html);
                 $html = preg_replace('/<\/div>/i', '', $html);
                 return '<table border="1"><tr><td style="font-family:\'Times New Roman\',serif; font-size:11pt; mso-number-format:\'@\';">' . trim($html) . '</td></tr></table>';
@@ -536,60 +555,41 @@ class AuditController extends Controller {
                 $user = $ver['user_full_name'] ?? $ver['created_by'] ?? '-';
                 $vNum = $ver['version_number'] ?? '?';
                 
-                // Stage display name
                 $stageDisplay = $stage;
                 if (stripos($stage, 'MAKER') !== false || $stage === 'DRAFT' || $stage === 'CREATED') $stageDisplay = 'MAKER';
                 elseif (stripos($stage, 'SPV') !== false) $stageDisplay = 'SPV';
                 elseif (stripos($stage, 'PIC') !== false) $stageDisplay = 'PIC';
                 elseif (stripos($stage, 'PROC') !== false) $stageDisplay = 'PROCEDURE';
 
-                // Parse inner sheet panes from the version HTML
                 $verContent = $ver['content'] ?? '';
+                $sheetNameBase = "V{$vNum} {$stageDisplay}";
                 
-                // Try to extract individual sheet panes
                 if (preg_match_all('/<div[^>]*class=["\']sheet-pane["\'][^>]*data-sheet-name=["\']([^"\']*)["\'][^>]*>(.*?)<\/div>\s*(?=<div|<\/div>)/is', $verContent, $paneMatches, PREG_SET_ORDER)) {
-                    // Multiple sheets in this version
                     foreach ($paneMatches as $pane) {
                         $sheetMedia = $pane[1] ?: 'Sheet';
-                        $sheetContent = $pane[2];
-                        
-                        $cleanTable = $cleanFileHtml($sheetContent);
-                        
-                        $sheetHtml = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">';
-                        $sheetHtml .= '<style>td { font-family: "Times New Roman", serif; font-size:11pt; mso-number-format:"@"; }</style>';
-                        $sheetHtml .= '</head><body>' . $cleanTable . '</body></html>';
-                        
-                        $sheetName = "V{$vNum} {$stageDisplay} ({$sheetMedia})";
-                        $sheetName = preg_replace('/[:\\\\\/\?\*\[\]]/', '_', $sheetName);
-                        $sheets[] = ['name' => substr($sheetName, 0, 31), 'html' => $sheetHtml];
+                        $cleanTable = $cleanFileHtml($pane[2]);
+                        echo '<h3>' . htmlspecialchars($sheetNameBase . ' (' . $sheetMedia . ')') . '</h3>';
+                        echo $cleanTable . '<br>';
                     }
                 } else {
-                    // Single content block or no sheet-pane structure — output the whole version content
-                    $cleanTable = $cleanFileHtml($verContent);
-                    
-                    $sheetHtml = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">';
-                    $sheetHtml .= '<style>td { font-family: "Times New Roman", serif; font-size:11pt; mso-number-format:"@"; }</style>';
-                    $sheetHtml .= '</head><body>' . $cleanTable . '</body></html>';
-                    
-                    $sheetName = "V{$vNum} {$stageDisplay}";
-                    $sheetName = preg_replace('/[:\\\\\/\?\*\[\]]/', '_', $sheetName);
-                    $sheets[] = ['name' => substr($sheetName, 0, 31), 'html' => $sheetHtml];
+                    echo '<h3>' . htmlspecialchars($sheetNameBase) . '</h3>';
+                    echo $cleanFileHtml($verContent) . '<br>';
                 }
             }
         }
 
-        // ====== SHEET: REVIEW NOTES ======
-        $notesHtml = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>';
-        $notesHtml .= '<table border="1" style="border-collapse:collapse;">';
-        $notesHtml .= '<tr>';
-        $notesHtml .= '<th style="' . $headerStyle . ' width:60px;">No</th>';
-        $notesHtml .= '<th style="' . $headerStyle . ' width:120px;">Action</th>';
-        $notesHtml .= '<th style="' . $headerStyle . ' width:100px;">Role</th>';
-        $notesHtml .= '<th style="' . $headerStyle . ' width:150px;">User</th>';
-        $notesHtml .= '<th style="' . $headerStyle . ' width:120px;">Group</th>';
-        $notesHtml .= '<th style="' . $headerStyle . ' width:150px;">Date</th>';
-        $notesHtml .= '<th style="' . $headerStyle . ' width:300px;">Details</th>';
-        $notesHtml .= '</tr>';
+        // 3. Review Notes
+        echo '<h2>Review & Audit Notes</h2>';
+        echo '<table>';
+        echo '<tr>';
+        echo '<th width="60">No</th>';
+        echo '<th width="120">Action</th>';
+        echo '<th width="100">Role</th>';
+        echo '<th width="150">User</th>';
+        echo '<th width="120">Group</th>';
+        echo '<th width="150">Date</th>';
+        echo '<th width="300">Details</th>';
+        echo '</tr>';
 
         $no = 1;
         foreach ($logs as $log) {
@@ -600,44 +600,19 @@ class AuditController extends Controller {
             $date = $log['created_at'] ?? '';
             $details = $log['details'] ?? '-';
 
-            $notesHtml .= '<tr style="' . $cellStyle . '">';
-            $notesHtml .= '<td style="' . $cellStyle . ' text-align:center;">' . $no++ . '</td>';
-            $notesHtml .= '<td style="' . $cellStyle . '">' . htmlspecialchars($action) . '</td>';
-            $notesHtml .= '<td style="' . $cellStyle . '">' . htmlspecialchars($role) . '</td>';
-            $notesHtml .= '<td style="' . $cellStyle . '">' . htmlspecialchars($user) . '</td>';
-            $notesHtml .= '<td style="' . $cellStyle . '">' . htmlspecialchars($group) . '</td>';
-            $notesHtml .= '<td style="' . $cellStyle . '">' . $fmtDate($date) . '</td>';
-            $notesHtml .= '<td style="' . $cellStyle . '">' . htmlspecialchars($details) . '</td>';
-            $notesHtml .= '</tr>';
+            echo '<tr>';
+            echo '<td style="text-align:center;">' . $no++ . '</td>';
+            echo '<td>' . htmlspecialchars($action) . '</td>';
+            echo '<td>' . htmlspecialchars($role) . '</td>';
+            echo '<td>' . htmlspecialchars($user) . '</td>';
+            echo '<td>' . htmlspecialchars($group) . '</td>';
+            echo '<td>' . $fmtDate($date) . '</td>';
+            echo '<td>' . htmlspecialchars($details) . '</td>';
+            echo '</tr>';
         }
-        $notesHtml .= '</table></body></html>';
-        $sheets[] = ['name' => 'Review Notes', 'html' => $notesHtml];
+        echo '</table>';
 
-        // ====== ASSEMBLE MHTML ======
-        $mhtml = "MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary=\"{$boundary}\"\r\n\r\n";
-
-        // Workbook Definition
-        $mhtml .= "--{$boundary}\r\nContent-Location: file:///C:/dummy/workbook.htm\r\nContent-Type: text/html; charset=\"utf-8\"\r\n\r\n";
-        $mhtml .= '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><xml><x:ExcelWorkbook><x:ExcelWorksheets>';
-        
-        foreach ($sheets as $idx => $sheet) {
-            $mhtml .= '<x:ExcelWorksheet><x:Name>' . htmlspecialchars($sheet['name']) . '</x:Name>';
-            $mhtml .= '<x:WorksheetSource HRef="sheet' . $idx . '.htm"/></x:ExcelWorksheet>';
-        }
-        
-        $mhtml .= '</x:ExcelWorksheets></x:ExcelWorkbook></xml></head><body></body></html>';
-        $mhtml .= "\r\n\r\n";
-
-        // Sheet Parts
-        foreach ($sheets as $idx => $sheet) {
-            $mhtml .= "--{$boundary}\r\nContent-Location: file:///C:/dummy/sheet{$idx}.htm\r\nContent-Type: text/html; charset=\"utf-8\"\r\n\r\n";
-            $mhtml .= $sheet['html'];
-            $mhtml .= "\r\n\r\n";
-        }
-
-        $mhtml .= "--{$boundary}--\r\n";
-
-        echo $mhtml;
+        echo '</body></html>';
         exit;
     }
 
