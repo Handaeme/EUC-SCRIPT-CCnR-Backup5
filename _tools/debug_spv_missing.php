@@ -16,11 +16,10 @@ if (!$conn) {
     die("<p style='color:red;'>❌ Database connection failed.</p>");
 }
 
-// 1. Get the last 10 requests that are NOT drafts
-echo "<h3>1. Recent Submitted/Processed Tickets (Last 10)</h3>";
+// 1. Get the last 10 requests REGARDLESS of status
+echo "<h3>1. Recent Tickets (Last 10 - ALL STATUSES)</h3>";
 $sql = "SELECT TOP 10 id, script_number, ticket_id, title, status, created_by, selected_spv, created_at 
         FROM script_request 
-        WHERE status NOT IN ('DRAFT', 'DRAFT_TEMP', 'LIBRARY') 
         ORDER BY created_at DESC";
 $stmt = db_query($conn, $sql);
 
