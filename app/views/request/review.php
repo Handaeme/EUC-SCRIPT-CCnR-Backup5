@@ -513,6 +513,40 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
             </div>
 
 
+            <?php
+            // [BANNER] Maker Confirmed Alert — show to Procedure when script was confirmed by Maker
+            $makerConfirmEntry = null;
+            if (isset($timeline) && is_array($timeline)) {
+                foreach ($timeline as $log) {
+                    if (($log['action'] ?? '') === 'MAKER_CONFIRM') {
+                        $makerConfirmEntry = $log;
+                        // Don't break — keep going to get the LATEST one (logs are ASC)
+                    }
+                }
+            }
+            $currentDeptForBanner = strtoupper($_SESSION['user']['dept'] ?? '');
+            if ($makerConfirmEntry && in_array($currentDeptForBanner, ['PROCEDURE', 'CPMS'])): 
+                $confirmBy = $makerConfirmEntry['full_name'] ?? $makerConfirmEntry['user_id'] ?? 'Maker';
+                $confirmDate = '';
+                if (!empty($makerConfirmEntry['created_at'])) {
+                    $confirmDate = ($makerConfirmEntry['created_at'] instanceof \DateTime) 
+                        ? $makerConfirmEntry['created_at']->format('d M Y, H:i')
+                        : date('d M Y, H:i', strtotime($makerConfirmEntry['created_at']));
+                }
+            ?>
+            <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:2px solid #10b981; border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; gap:16px; box-shadow:0 2px 8px rgba(16,185,129,0.15);">
+                <div style="flex-shrink:0; background:#10b981; color:white; border-radius:10px; padding:10px; display:flex; align-items:center; justify-content:center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:14px; font-weight:700; color:#065f46; margin-bottom:4px;">✅ Dikonfirmasi oleh Maker</div>
+                    <div style="font-size:12px; color:#047857; line-height:1.5;">
+                        <strong><?php echo htmlspecialchars($confirmBy); ?></strong> telah mereview dan mengkonfirmasi script ini<?php if ($confirmDate): ?> pada <strong><?php echo $confirmDate; ?></strong><?php endif; ?>. Silakan lanjutkan proses publish.
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
 
             <h4 style="border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px; color:#333; display:flex; justify-content:space-between; align-items:center;">
                 <span>Script Content (Editable)</span>

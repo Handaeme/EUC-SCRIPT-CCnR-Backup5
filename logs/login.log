@@ -849,3 +849,15 @@
 [2026-02-26 14:32:42] Attempted login for user: maker01
 [2026-02-26 14:32:42] Local login successful for user: maker01
 [2026-02-26 14:32:42] Redirecting maker01 to index.php
+[2026-02-26 16:14:15] Attempted login for user: proc01
+[2026-02-26 16:14:15] Local login successful for user: proc01
+[2026-02-26 16:14:15] Redirecting proc01 to index.php
+[2026-02-26 16:23:31] Attempted login for user: proc01
+[2026-02-26 16:23:31] Local login successful for user: proc01
+[2026-02-26 16:23:31] Redirecting proc01 to index.php
+[2026-02-26 16:40:22] Attempted login for user: maker01
+[2026-02-26 16:40:22] Local login successful for user: maker01
+[2026-02-26 16:40:22] Redirecting maker01 to index.php
+[2026-02-26 16:40:49] Attempted login for user: proc01
+[2026-02-26 16:40:49] Local login successful for user: proc01
+[2026-02-26 16:40:49] Redirecting proc01 to index.php
