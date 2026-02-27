@@ -1002,7 +1002,7 @@ class RequestModel {
 
     public function getDistinctRequestValues($column) {
         // Validation to prevent SQL Injection
-        $allowedColumns = ['jenis', 'produk', 'kategori', 'media'];
+        $allowedColumns = ['jenis', 'produk', 'kategori', 'media', 'status'];
         if (!in_array($column, $allowedColumns)) {
             return [];
         }
@@ -1011,7 +1011,7 @@ class RequestModel {
         // Note: For Dashboard, we might want to filter this by Role/Status too, but generally showing all available options is acceptable UX.
         $sql = "SELECT DISTINCT $column 
                 FROM script_request 
-                WHERE $column IS NOT NULL AND $column != ''
+                WHERE $column IS NOT NULL AND $column != '' AND status != 'DRAFT_TEMP'
                 ORDER BY $column ASC";
                 
         $stmt = db_query($this->conn, $sql);
@@ -1410,8 +1410,8 @@ class RequestModel {
     }
 
     public function getAuditExportData($startDate = null, $endDate = null, $sortColumn = 'created_at', $sortOrder = 'DESC', $filters = [], $search = null) {
-        // Get all requests with aggregated audit data
-        $where = "WHERE 1=1 AND r.is_deleted = 0";
+        // Get all requests with aggregated audit data, excluding DRAFT_TEMP
+        $where = "WHERE 1=1 AND r.is_deleted = 0 AND r.status != 'DRAFT_TEMP'";
         $params = [];
         
         // Search Filter (Global)
@@ -1428,7 +1428,7 @@ class RequestModel {
         }
 
         // Advanced Filters (Multi-Select)
-        $filterableColumns = ['jenis', 'produk', 'kategori'];
+        $filterableColumns = ['jenis', 'produk', 'kategori', 'status'];
         foreach ($filterableColumns as $col) {
             if (!empty($filters[$col]) && is_array($filters[$col])) {
                 if (in_array($col, ['produk', 'kategori'])) {

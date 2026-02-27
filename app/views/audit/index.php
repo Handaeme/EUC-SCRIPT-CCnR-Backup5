@@ -92,7 +92,7 @@ require_once 'app/views/layouts/sidebar.php';
                     
                     <div style="display:flex; align-items:center; gap:10px;">
                         <!-- Action Buttons (Moved to Right) -->
-                        <?php if(!empty($_GET) && (isset($_GET['jenis']) || isset($_GET['produk']) || isset($_GET['kategori']) || isset($_GET['media']) || isset($_GET['start_date']) || isset($_GET['search']))): ?>
+                        <?php if(!empty($_GET) && (isset($_GET['jenis']) || isset($_GET['produk']) || isset($_GET['kategori']) || isset($_GET['media']) || isset($_GET['status']) || isset($_GET['start_date']) || isset($_GET['search']))): ?>
                              <a href="?controller=audit&action=index" style="margin-right:10px; color:#64748b; font-size:13px; text-decoration:none;">Reset</a>
                         <?php endif; ?>
                         
@@ -116,7 +116,8 @@ require_once 'app/views/layouts/sidebar.php';
                         'jenis' => 'Jenis', 
                         'produk' => 'Produk', 
                         'kategori' => 'Kategori', 
-                        'media' => 'Media Channel'
+                        'media' => 'Media Channel',
+                        'status' => 'Status'
                     ];
                     
                     foreach ($filterLabels as $key => $label): 

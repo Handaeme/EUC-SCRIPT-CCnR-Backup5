@@ -28,7 +28,7 @@ class AuditController extends Controller {
 
         // Advanced Filters
         $filters = [];
-        $filterCols = ['jenis', 'produk', 'kategori', 'media'];
+        $filterCols = ['jenis', 'produk', 'kategori', 'media', 'status'];
         $filterOptions = [];
         
         foreach ($filterCols as $col) {
