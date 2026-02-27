@@ -278,10 +278,29 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
         $roleLabel = 'GUEST / VIEWER';
     }
 
+    // FIX: Lookup real USERID and FULLNAME from tbluser using NIK
+    // Portal gives NIK (e.g., 3006485), but DB uses USERID (e.g., AH06485X)
+    $nik = trim($_SESSION['NIK']);
+    $realUserId = $nik; // Fallback to NIK if not found in DB
+    $realFullName = trim($_SESSION['USER_NAME'] ?? $_SESSION['FULLNAME'] ?? $_SESSION['NAMA'] ?? $nik);
+    
+    // Try to find the actual USERID from tbluser using NIK
+    $sqlLookup = "SELECT USERID, FULLNAME FROM tbluser WHERE NIK = ? AND AKTIF = 1";
+    $stmtLookup = db_query($conn, $sqlLookup, [$nik]);
+    
+    if ($stmtLookup && db_has_rows($stmtLookup)) {
+        $userData = db_fetch_array($stmtLookup, DB_FETCH_ASSOC);
+        $userData = array_change_key_case($userData, CASE_UPPER);
+        $realUserId = trim($userData['USERID']); // e.g., AH06485X
+        if (!empty(trim($userData['FULLNAME'] ?? ''))) {
+            $realFullName = trim($userData['FULLNAME']); // e.g., ANDRI HARIANTO
+        }
+    }
+
     // Build the array expected by EUC-Script
     $_SESSION['user'] = [
-        'userid' => $_SESSION['NIK'], 
-        'fullname' => $_SESSION['USER_NAME'] ?? $_SESSION['NAMA'] ?? $_SESSION['NIK'], // Try to find a name, fallback to NIK
+        'userid' => $realUserId,       // FIX: Use real USERID for SPV ticket matching
+        'fullname' => $realFullName,    // FIX: Use real FULLNAME for header display
         'dept' => $derivedRole,           
         'role_label' => $roleLabel,       
         'job_function' => $_SESSION['JOB_FUNCTION'] ?? '',
