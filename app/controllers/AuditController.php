@@ -43,7 +43,8 @@ class AuditController extends Controller {
         
         // Pagination
         $page = max(1, intval($_GET['page'] ?? 1));
-        $perPage = 10;
+        $perPage = intval($_GET['per_page'] ?? 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) $perPage = 10;
         $totalItems = count($logs);
         $totalPages = max(1, ceil($totalItems / $perPage));
         $paginatedLogs = array_slice($logs, ($page - 1) * $perPage, $perPage);
@@ -333,12 +334,22 @@ class AuditController extends Controller {
             // Keep revision span text (unwrap)
             $text = preg_replace('/<span[^>]*class="[^"]*revision-span[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $text);
             $text = preg_replace('/<span[^>]*style="[^"]*color:\s*red[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $text);
+            
+            // FIX: Protect user variables like <Nama>, <Alamat> from strip_tags
+            $text = preg_replace_callback('/<([A-Za-z_][A-Za-z0-9_ ]*)>/', function($m) {
+                return '%%OPEN%%' . $m[1] . '%%CLOSE%%';
+            }, $text);
+            
             // Convert block elements to newlines
             $text = preg_replace('/<br\s*\/?>/i', "\n", $text);
             $text = preg_replace('/<\/p>\s*<p[^>]*>/i', "\n\n", $text);
             $text = preg_replace('/<\/p>/i', "\n", $text);
             $text = preg_replace('/<\/div>/i', "\n", $text);
             $text = strip_tags($text);
+            
+            // Step 3: Restore protected variables back to <Nama> format
+            $text = str_replace(['%%OPEN%%', '%%CLOSE%%'], ['<', '>'], $text);
+            
             return trim($text);
         };
 
@@ -508,7 +519,7 @@ class AuditController extends Controller {
                     elseif (stripos($stage, 'PROC') !== false) $stageDisplay = 'PROCEDURE';
 
                     $cleanContent = $cleanHtml($ver['content']);
-                    $excelContent = str_replace(["\r\n", "\r", "\n"], "<br style='mso-data-placement:same-cell;' />", htmlspecialchars($cleanContent));
+                    $excelContent = str_replace(["\r\n", "\r", "\n"], "<br style='mso-data-placement:same-cell;' />", htmlspecialchars($cleanContent, ENT_QUOTES | ENT_HTML401));
 
                     echo '<tr>';
                     echo '<td style="text-align:center;">' . $no++ . '</td>';

@@ -249,9 +249,9 @@ function log_message($message) {
 }
 
 // --- SSO SESSION MAPPING ---
-// If SSO is active, the main portal stores data in the root of $_SESSION (e.g., $_SESSION['NIK'])
+// If SSO is active, the main portal stores data in the root of $_SESSION (e.g., $_SESSION['USERID'])
 // EUC-Script expects this data to be inside $_SESSION['user']. We map it here automatically.
-if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['userid'])) {
+if ($USE_PORTAL_SSO && isset($_SESSION['USERID']) && !empty($_SESSION['USERID']) && !isset($_SESSION['user']['userid'])) {
     $jobFunc = strtoupper(trim($_SESSION['JOB_FUNCTION'] ?? ''));
     $dept    = strtoupper(trim($_SESSION['DEPT'] ?? ''));
     $divisi  = trim($_SESSION['DIVISI'] ?? '');
@@ -278,29 +278,13 @@ if ($USE_PORTAL_SSO && isset($_SESSION['NIK']) && !isset($_SESSION['user']['user
         $roleLabel = 'GUEST / VIEWER';
     }
 
-    // FIX: Lookup real USERID and FULLNAME from tbluser using NIK
-    // Portal gives NIK (e.g., 3006485), but DB uses USERID (e.g., AH06485X)
-    $nik = trim($_SESSION['NIK']);
-    $realUserId = $nik; // Fallback to NIK if not found in DB
-    $realFullName = trim($_SESSION['USER_NAME'] ?? $_SESSION['FULLNAME'] ?? $_SESSION['NAMA'] ?? $nik);
-    
-    // Try to find the actual USERID from tbluser using NIK
-    $sqlLookup = "SELECT USERID, FULLNAME FROM tbluser WHERE NIK = ? AND AKTIF = 1";
-    $stmtLookup = db_query($conn, $sqlLookup, [$nik]);
-    
-    if ($stmtLookup && db_has_rows($stmtLookup)) {
-        $userData = db_fetch_array($stmtLookup, DB_FETCH_ASSOC);
-        $userData = array_change_key_case($userData, CASE_UPPER);
-        $realUserId = trim($userData['USERID']); // e.g., AH06485X
-        if (!empty(trim($userData['FULLNAME'] ?? ''))) {
-            $realFullName = trim($userData['FULLNAME']); // e.g., ANDRI HARIANTO
-        }
-    }
+    $realUserId = trim($_SESSION['USERID']); // e.g., NF00009X
+    $realFullName = trim($_SESSION['FULLNAME'] ?? $realUserId); // e.g., NATASYA RAHMA FADILLA
 
     // Build the array expected by EUC-Script
     $_SESSION['user'] = [
-        'userid' => $realUserId,       // FIX: Use real USERID for SPV ticket matching
-        'fullname' => $realFullName,    // FIX: Use real FULLNAME for header display
+        'userid' => $realUserId,       
+        'fullname' => $realFullName,    
         'dept' => $derivedRole,           
         'role_label' => $roleLabel,       
         'job_function' => $_SESSION['JOB_FUNCTION'] ?? '',

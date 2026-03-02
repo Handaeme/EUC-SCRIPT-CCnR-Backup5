@@ -146,7 +146,9 @@ class RequestModel {
                 $orderBy = "ORDER BY created_at DESC";
             }
 
-            $sql = "SELECT * FROM script_request $where $orderBy";
+            $sql = "SELECT script_request.*, 
+                    (SELECT TOP 1 action FROM script_audit_trail WHERE request_id = script_request.id ORDER BY created_at DESC) as last_action 
+                    FROM script_request $where $orderBy";
             
             $stmt = db_query($this->conn, $sql, $params);
             $requests = [];
@@ -996,7 +998,6 @@ class RequestModel {
             $rows[] = $row;
         }
         
-        error_log("Library items count: " . count($rows));
         return $rows;
     }
 
@@ -1388,7 +1389,8 @@ class RequestModel {
             }
         }
 
-        $sql = "SELECT a.action as my_last_action, a.created_at as my_action_date, a.details as my_note, r.*
+        $sql = "SELECT a.action as my_last_action, a.created_at as my_action_date, a.details as my_note, r.*,
+                (SELECT TOP 1 action FROM script_audit_trail WHERE request_id = r.id ORDER BY created_at DESC) as last_action
                 FROM script_audit_trail a
                 JOIN script_request r ON a.request_id = r.id
                 $where

@@ -291,8 +291,18 @@ $historyCount = $stats['history'] ?? 0;
                             ?>
                         </td>
                         <td style="padding:10px;">
-                             <span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700;">
-                                <?php echo htmlspecialchars($req['status']); ?>
+                            <?php
+                                $pendingBadgeBg = '#fef3c7';
+                                $pendingBadgeColor = '#b45309';
+                                $pendingBadgeLabel = $req['status'];
+                                if ($req['status'] === 'APPROVED_PIC' && ($req['last_action'] ?? '') === 'MAKER_CONFIRM') {
+                                    $pendingBadgeBg = '#d1fae5';
+                                    $pendingBadgeColor = '#065f46';
+                                    $pendingBadgeLabel = 'MAKER ACC';
+                                }
+                            ?>
+                             <span style="background:<?php echo $pendingBadgeBg; ?>; color:<?php echo $pendingBadgeColor; ?>; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700;">
+                                <?php echo htmlspecialchars($pendingBadgeLabel); ?>
                             </span>
                             <?php if (!empty($req['has_draft'])): ?>
                                 <span style="font-size:10px; color:#6b21a8; font-weight:700; margin-left:3px;">(DRAFT)</span>
@@ -396,6 +406,10 @@ $historyCount = $stats['history'] ?? 0;
                                 } elseif ($req['status'] === 'DRAFT') {
                                     $statusColor = '#f3f4f6';
                                     $statusTextColor = '#4b5563';
+                                } elseif ($req['status'] === 'APPROVED_PIC' && ($req['last_action'] ?? '') === 'MAKER_CONFIRM') {
+                                    $statusColor = '#d1fae5';
+                                    $statusTextColor = '#065f46';
+                                    $statusLabel = 'MAKER ACC';
                                 } elseif (in_array($req['status'], ['CREATED', 'APPROVED_SPV', 'APPROVED_PIC', 'APPROVED_PROCEDURE'])) {
                                     $statusColor = '#eff6ff';
                                     $statusTextColor = '#1d4ed8';

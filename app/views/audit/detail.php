@@ -6,6 +6,7 @@ require_once 'app/views/layouts/sidebar.php';
 <!-- SheetJS with Style Support for Excel Export (Red Font for Revisions) -->
 <!-- We must use xlsx-js-style directly because standard xlsx.full.min.js does not support styling -->
 <script src="public/js/xlsx.bundle.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';"></script>
+<script src="public/assets/js/exceljs.min.js"></script>
 
 <?php
 $req = $data['request'];
@@ -309,26 +310,10 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                     $totalVers = !empty($content['versions']) ? count($content['versions']) : 0;
                     $latestVerNum = $totalVers; // Default to latest version
                     ?>
-                    <a id="exportExcelBtn" href="?controller=audit&action=exportDetail&id=<?php echo $req['id']; ?>&ver=<?php echo $latestVerNum; ?>" style="background:#0f766e; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background 0.2s; text-decoration:none;">
+                    <button id="exportExcelBtn" onclick="downloadAuditDetailExcel()" style="background:#0f766e; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background 0.2s;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export Excel
-                    </a>
-                    <script>
-                    // Update Export button when version tab is switched
-                    (function() {
-                        const origSwitchVersion = window.switchVersion;
-                        window.switchVersion = function(idx) {
-                            if (origSwitchVersion) origSwitchVersion(idx);
-                            // Update export link with selected version number (idx is 0-based, ver is 1-based)
-                            const btn = document.getElementById('exportExcelBtn');
-                            if (btn) {
-                                const url = new URL(btn.href);
-                                url.searchParams.set('ver', idx + 1);
-                                btn.href = url.toString();
-                            }
-                        };
-                    })();
-                    </script>
+                    </button>
                 </div>
                 
                 <?php if (($req['mode'] ?? '') === 'FILE_UPLOAD'): ?>
@@ -662,7 +647,8 @@ else if ($req['status'] === 'CREATED' || $req['status'] === 'SUBMITTED') $status
                                 elseif ($detailText === 'Re-submitted by Maker') $detailText = 'Re-submitted by ' . ($log['full_name'] ?? $log['user_id']);
                                 elseif ($detailText === 'Draft saved by Maker') $detailText = 'Draft saved by ' . ($log['full_name'] ?? $log['user_id']);
                                 
-                                echo htmlspecialchars($detailText); 
+                                // FIX: Use htmlspecialchars to preserve <Nama> and other <Tags> inside review notes
+                                echo htmlspecialchars(trim($detailText), ENT_QUOTES | ENT_HTML401); 
                                 ?>
                             </div>
                         <?php endif; ?>
@@ -1404,6 +1390,467 @@ function downloadAuditExcel() {
 
     // Generate and download the Excel file
     XLSX.writeFile(workbook, 'Audit_Export.xlsx');
+}
+
+// ====================================================================
+// [NEW] EXCELJS-BASED AUDIT DETAIL EXPORT
+// Creates a proper multi-sheet .xlsx with formatting and borders
+// ====================================================================
+async function downloadAuditDetailExcel() {
+    if (typeof ExcelJS === 'undefined') {
+        alert('ExcelJS library not loaded. Please check public/assets/js/exceljs.min.js');
+        return;
+    }
+
+    const ticketId = <?php echo json_encode($ticketId ?? ''); ?>;
+    const scriptNum = <?php echo json_encode($req['script_number'] ?? ''); ?>;
+    const reqTitle = <?php echo json_encode($req['title'] ?? '-'); ?>;
+    const reqStatus = <?php echo json_encode($req['status'] ?? '-'); ?>;
+    const reqMode = <?php echo json_encode($req['mode'] ?? 'FREE_INPUT'); ?>;
+    const reqJenis = <?php echo json_encode($req['jenis'] ?? '-'); ?>;
+    const reqProduk = <?php echo json_encode($req['produk'] ?? '-'); ?>;
+    const reqMedia = <?php echo json_encode($req['media'] ?? '-'); ?>;
+    const reqKategori = <?php echo json_encode($req['kategori'] ?? '-'); ?>;
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'EUC Script System';
+    workbook.created = new Date();
+
+    const borderStyle = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
+    const headerFont = { bold: true, name: 'Times New Roman', size: 11 };
+    const cellFont = { name: 'Times New Roman', size: 11 };
+    const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+
+    // ====== SHEET 1: REQUEST INFO ======
+    const wsInfo = workbook.addWorksheet('Request Info');
+    wsInfo.columns = [
+        { width: 22 },
+        { width: 50 }
+    ];
+
+    const infoData = [
+        ['Ticket ID', ticketId],
+        ['Script Number', scriptNum],
+        ['Status', reqStatus],
+        ['Title / Purpose', reqTitle],
+        ['Input Mode', reqMode === 'FILE_UPLOAD' ? 'File Upload' : 'Free Input'],
+        ['Jenis', reqJenis],
+        ['Produk', reqProduk],
+        ['Media', reqMedia],
+        ['Kategori', reqKategori],
+    ];
+
+    // Read role info from DOM
+    const metaGrid = document.querySelector('.detail-grid .content-column .card');
+    if (metaGrid) {
+        const labels = metaGrid.querySelectorAll('div[style*="font-size:11px"]');
+        labels.forEach(label => {
+            const text = label.textContent.trim();
+            if (['Maker','SPV','PIC','Procedure','Created Date','Last Updated'].includes(text)) {
+                const valueEl = label.nextElementSibling;
+                if (valueEl) {
+                    let val = valueEl.textContent.trim();
+                    if (val) infoData.push([text, val]);
+                }
+            }
+        });
+    }
+
+    infoData.forEach((row, i) => {
+        const excelRow = wsInfo.addRow(row);
+        excelRow.getCell(1).font = headerFont;
+        excelRow.getCell(1).fill = headerFill;
+        excelRow.getCell(1).border = borderStyle;
+        excelRow.getCell(1).alignment = { vertical: 'middle' };
+        excelRow.getCell(2).font = cellFont;
+        excelRow.getCell(2).border = borderStyle;
+        excelRow.getCell(2).alignment = { vertical: 'middle', wrapText: true };
+    });
+
+    // ====== SHEET 2+: SCRIPT CONTENT ======
+    // Collect content panes from ACTIVE version only
+    let contentPanes = [];
+    
+    // A) Free Input: direct tab panes with data-media
+    document.querySelectorAll('.sheet-pane.free-input-pane').forEach(p => contentPanes.push(p));
+    
+    // B) File Upload: only from the ACTIVE (visible) version-pane
+    const allVersionPanes = document.querySelectorAll('.version-pane');
+    let activeVersionPane = null;
+    allVersionPanes.forEach(vp => {
+        if (vp.style.display !== 'none' && getComputedStyle(vp).display !== 'none') {
+            activeVersionPane = vp;
+        }
+    });
+    
+    if (activeVersionPane) {
+        const innerSheets = activeVersionPane.querySelectorAll('.sheet-pane');
+        if (innerSheets.length > 0) {
+            innerSheets.forEach(sp => contentPanes.push(sp));
+        } else {
+            contentPanes.push(activeVersionPane);
+        }
+    }
+    
+    // Helper: collect review notes from a DOM element
+    function collectReviewNotes(el) {
+        const notes = [];
+        const revSelector = '.revision-span, .deletion-span, .inline-comment, span[style*="text-decoration: line-through"], span[style*="text-decoration:line-through"], span[style*="color: red"], span[style*="color:red"], span[style*="color:#ef4444"], span[style*="color:#dc2626"], s, strike, del';
+        const processedEls = new Set();
+        
+        el.querySelectorAll(revSelector).forEach(span => {
+            if (processedEls.has(span)) return;
+            if (span.closest && span.closest('.deletion-span') && span !== span.closest('.deletion-span')) return;
+            processedEls.add(span);
+            span.querySelectorAll('*').forEach(child => processedEls.add(child));
+            
+            const style = span.style ? span.style.cssText || '' : '';
+            const tagName = span.tagName.toLowerCase();
+            const isStrikethrough = style.includes('line-through') || ['s', 'strike', 'del'].includes(tagName) || span.classList.contains('deletion-span');
+            const isRedText = style.includes('red') || style.includes('#ef4444') || style.includes('#dc2626') || span.classList.contains('revision-span');
+            
+            if (!isStrikethrough && !isRedText) return;
+            
+            const origText = span.textContent.trim();
+            if (!origText || origText.length < 1) return;
+            if (span.style && span.style.display === 'none') return;
+            
+            const action = isStrikethrough ? 'Dihapus' : 'Direvisi/Ditambahkan';
+            const user = span.getAttribute('data-comment-user') || span.getAttribute('data-user') || '';
+            const dept = span.getAttribute('data-comment-dept') || span.getAttribute('data-dept') || '';
+            const job = span.getAttribute('data-comment-job') || '';
+            const time = span.getAttribute('data-comment-time') || '';
+            
+            let byLine = '';
+            if (user) {
+                byLine = user;
+                if (dept) byLine += ' (' + dept + ')';
+                else if (job) byLine += ' (' + job + ')';
+            }
+            
+            const textPreview = origText.length > 60 ? origText.substring(0, 57) + '...' : origText;
+            let note = '• "' + textPreview + '" - ' + action;
+            if (byLine) note += ' oleh ' + byLine;
+            if (time) note += ' [' + time + ']';
+            
+            notes.push(note);
+        });
+        
+        return notes;
+    }
+    
+    if (contentPanes.length > 0) {
+        // Temporarily show hidden panes
+        const hiddenPanes = [];
+        contentPanes.forEach(el => {
+            const vParent = el.closest('.version-pane');
+            if (vParent && (vParent.style.display === 'none' || getComputedStyle(vParent).display === 'none')) {
+                if (!hiddenPanes.find(p => p.el === vParent)) {
+                    hiddenPanes.push({ el: vParent, orig: vParent.style.display });
+                    vParent.style.display = 'block';
+                }
+            }
+            if (el.style.display === 'none' || getComputedStyle(el).display === 'none') {
+                hiddenPanes.push({ el, orig: el.style.display });
+                el.style.display = 'block';
+            }
+        });
+
+        contentPanes.forEach((pane, idx) => {
+            // --- ROBUST SHEET NAME DETECTION ---
+            let sheetName = pane.getAttribute('data-media') || pane.getAttribute('data-sheet-name') || '';
+            
+            if (!sheetName && pane.id) {
+                const wrapper = pane.closest('.version-pane') || pane.closest('.card') || pane.parentElement;
+                if (wrapper) {
+                    const btns = wrapper.querySelectorAll('.btn-sheet, button[onclick*="changeSheet"]');
+                    for (const btn of btns) {
+                        const onclick = btn.getAttribute('onclick') || '';
+                        if (onclick.includes("'" + pane.id + "'") || onclick.includes('"' + pane.id + '"')) {
+                            const clone = btn.cloneNode(true);
+                            clone.querySelectorAll('.tab-badge-dot, i').forEach(el => el.remove());
+                            sheetName = clone.textContent.trim();
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!sheetName) {
+                const btn = document.getElementById('tab-btn-' + idx);
+                if (btn) {
+                    const clone = btn.cloneNode(true);
+                    clone.querySelectorAll('.tab-badge-dot, i').forEach(el => el.remove());
+                    sheetName = clone.textContent.trim();
+                }
+            }
+            
+            if (!sheetName) sheetName = 'Content ' + (idx + 1);
+            sheetName = sheetName.replace(/[:\\\\/?*[\]]/g, '').substring(0, 31);
+
+            let finalName = sheetName;
+            let suffix = 1;
+            while (workbook.getWorksheet(finalName)) {
+                finalName = sheetName.substring(0, 27) + ' (' + suffix + ')';
+                suffix++;
+            }
+
+            const ws = workbook.addWorksheet(finalName);
+
+            // Collect review notes from ORIGINAL pane (before cloning/cleaning)
+            const reviewNotes = collectReviewNotes(pane);
+
+            // Clone and clean for content (remove deletion-spans for clean text)
+            const cleanPane = pane.cloneNode(true);
+            cleanPane.querySelectorAll('.deletion-span').forEach(el => el.remove());
+
+            const table = cleanPane.querySelector('table');
+            if (table) {
+                // TABLE MODE (File Upload)
+                const origTable = pane.querySelector('table');
+                const rows = table.querySelectorAll('tr');
+                const origRows = origTable ? origTable.querySelectorAll('tr') : [];
+                let maxCols = 0;
+                rows.forEach(tr => { if (tr.cells.length > maxCols) maxCols = tr.cells.length; });
+                
+                // Add 1 extra column for "Catatan Revisi"
+                const colWidths = [];
+                for (let i = 0; i < maxCols; i++) {
+                    colWidths.push({ width: i === 0 ? 8 : (i === 1 ? 10 : 25) });
+                }
+                colWidths.push({ width: 40 }); // Catatan Revisi column
+                ws.columns = colWidths;
+
+                rows.forEach((tr, rowIdx) => {
+                    const excelRow = ws.addRow([]);
+                    Array.from(tr.cells).forEach((td, cellIdx) => {
+                        const cell = excelRow.getCell(cellIdx + 1);
+                        cell.border = borderStyle;
+                        cell.alignment = { vertical: 'top', wrapText: true };
+
+                        // Rich text with red color detection
+                        const richText = [];
+                        function walkNode(node, isRed) {
+                            if (node.nodeType === 3) {
+                                const txt = node.textContent;
+                                if (txt) {
+                                    richText.push({
+                                        text: txt,
+                                        font: isRed 
+                                            ? { name: 'Times New Roman', size: 11, color: { argb: 'FFFF0000' }, bold: true }
+                                            : { name: 'Times New Roman', size: 11 }
+                                    });
+                                }
+                            } else if (node.nodeType === 1) {
+                                const tag = node.tagName.toLowerCase();
+                                if (tag === 'br') {
+                                    richText.push({ text: '\n' });
+                                } else if (tag === 'div' || tag === 'p') {
+                                    if (richText.length > 0 && !richText[richText.length-1].text?.endsWith('\n')) {
+                                        richText.push({ text: '\n' });
+                                    }
+                                    node.childNodes.forEach(n => walkNode(n, isRed));
+                                    richText.push({ text: '\n' });
+                                } else {
+                                    let nowRed = isRed || node.classList?.contains('revision-span') 
+                                        || node.style?.color === 'red' || node.style?.color === 'rgb(255, 0, 0)' || node.style?.color === '#ef4444';
+                                    node.childNodes.forEach(n => walkNode(n, nowRed));
+                                }
+                            }
+                        }
+                        td.childNodes.forEach(n => walkNode(n, false));
+
+                        if (richText.length > 0) {
+                            cell.value = { richText: richText };
+                        } else {
+                            cell.value = td.innerText;
+                            cell.font = cellFont;
+                        }
+
+                        // Header row styling
+                        if (rowIdx === 0) {
+                            cell.font = headerFont;
+                            cell.fill = headerFill;
+                            cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                        }
+                    });
+                    
+                    // Add "Catatan Revisi" header/content in the extra column
+                    const notesCell = excelRow.getCell(maxCols + 1);
+                    notesCell.border = borderStyle;
+                    notesCell.alignment = { vertical: 'top', wrapText: true };
+                    
+                    if (rowIdx === 0) {
+                        // Header row
+                        notesCell.value = 'Catatan Revisi';
+                        notesCell.font = headerFont;
+                        notesCell.fill = headerFill;
+                        notesCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                    } else {
+                        // Collect per-row notes from the ORIGINAL table row
+                        const origRow = origRows[rowIdx];
+                        if (origRow) {
+                            const rowNotes = collectReviewNotes(origRow);
+                            if (rowNotes.length > 0) {
+                                notesCell.value = rowNotes.join('\n');
+                                notesCell.font = { name: 'Times New Roman', size: 10, color: { argb: 'FFCC0000' } };
+                            }
+                        }
+                    }
+                });
+            } else {
+                // TEXT MODE (Free Input)
+                ws.columns = [{ width: 100 }, { width: 45 }];
+                
+                // Column A: Script Content (clean)
+                const richText = [];
+                function walkFreeNode(node, isRed) {
+                    if (node.nodeType === 3) {
+                        const txt = node.textContent;
+                        if (txt) {
+                            richText.push({
+                                text: txt,
+                                font: isRed 
+                                    ? { name: 'Times New Roman', size: 11, color: { argb: 'FFFF0000' }, bold: true }
+                                    : { name: 'Times New Roman', size: 11 }
+                            });
+                        }
+                    } else if (node.nodeType === 1) {
+                        const tag = node.tagName.toLowerCase();
+                        if (tag === 'br') {
+                            richText.push({ text: '\n' });
+                        } else if (tag === 'div' || tag === 'p') {
+                            if (richText.length > 0 && !richText[richText.length-1].text?.endsWith('\n')) {
+                                richText.push({ text: '\n' });
+                            }
+                            node.childNodes.forEach(n => walkFreeNode(n, isRed));
+                            richText.push({ text: '\n' });
+                        } else {
+                            let nowRed = isRed || node.classList?.contains('revision-span')
+                                || node.style?.color === 'red' || node.style?.color === 'rgb(255, 0, 0)' || node.style?.color === '#ef4444';
+                            node.childNodes.forEach(n => walkFreeNode(n, nowRed));
+                        }
+                    }
+                }
+                cleanPane.childNodes.forEach(n => walkFreeNode(n, false));
+
+                // Header row
+                const hdrRow = ws.addRow(['Script Content', 'Catatan Revisi']);
+                hdrRow.getCell(1).font = headerFont;
+                hdrRow.getCell(1).fill = headerFill;
+                hdrRow.getCell(1).border = borderStyle;
+                hdrRow.getCell(2).font = headerFont;
+                hdrRow.getCell(2).fill = headerFill;
+                hdrRow.getCell(2).border = borderStyle;
+
+                // Content row
+                const contentRow = ws.addRow([]);
+                const cellA = contentRow.getCell(1);
+                if (richText.length > 0) {
+                    cellA.value = { richText: richText };
+                } else {
+                    cellA.value = cleanPane.innerText;
+                    cellA.font = cellFont;
+                }
+                cellA.alignment = { vertical: 'top', wrapText: true };
+                cellA.border = borderStyle;
+                
+                // Column B: Review Notes
+                const cellB = contentRow.getCell(2);
+                if (reviewNotes.length > 0) {
+                    cellB.value = reviewNotes.join('\n');
+                    cellB.font = { name: 'Times New Roman', size: 10, color: { argb: 'FFCC0000' } };
+                } else {
+                    cellB.value = '(Tidak ada revisi)';
+                    cellB.font = { name: 'Times New Roman', size: 10, italic: true, color: { argb: 'FF999999' } };
+                }
+                cellB.alignment = { vertical: 'top', wrapText: true };
+                cellB.border = borderStyle;
+            }
+        });
+
+        // Restore hidden panes
+        hiddenPanes.forEach(p => p.el.style.display = p.orig);
+    }
+
+    // ====== SHEET: TIMELINE & REVIEW NOTES ======
+    const wsTimeline = workbook.addWorksheet('Timeline & Notes');
+    wsTimeline.columns = [
+        { width: 6 },   // No
+        { width: 20 },  // Date
+        { width: 25 },  // Action
+        { width: 20 },  // User
+        { width: 15 },  // Role
+        { width: 40 },  // Details
+    ];
+
+    // Header
+    const tlHeader = wsTimeline.addRow(['No', 'Date', 'Action', 'User', 'Role', 'Details']);
+    tlHeader.eachCell(cell => {
+        cell.font = headerFont;
+        cell.fill = headerFill;
+        cell.border = borderStyle;
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+
+    // Read timeline from DOM
+    const timelineContainer = document.getElementById('timeline-container');
+    if (timelineContainer) {
+        const entries = timelineContainer.querySelectorAll('div[style*="position:relative"]');
+        let no = 1;
+        entries.forEach(entry => {
+            // Skip the anchor ("Created" label)
+            if (entry.classList.contains('timeline-anchor')) return;
+
+            const children = entry.querySelectorAll(':scope > div');
+            let date = '', action = '', user = '', role = '', details = '';
+
+            children.forEach(div => {
+                const text = div.textContent.trim();
+                const style = div.getAttribute('style') || '';
+                // Date line (11px, color gray)
+                if (style.includes('font-size:11px') && style.includes('color:#9ca3af')) {
+                    date = text;
+                }
+                // Action line (font-weight:700)
+                else if (style.includes('font-weight:700') && style.includes('font-size:13px')) {
+                    action = text;
+                }
+                // User/role block
+                else if (style.includes('font-size:12px') && style.includes('color:#666')) {
+                    const parts = text.split('\n').map(s => s.trim()).filter(Boolean);
+                    if (parts.length >= 1) user = parts[0].replace(/^by\s+/i, '');
+                    if (parts.length >= 2) role = parts[1];
+                }
+                // Details box
+                else if (style.includes('margin-top:8px') && style.includes('border-radius:6px')) {
+                    details = text;
+                }
+            });
+
+            if (action || user) {
+                const row = wsTimeline.addRow([no++, date, action, user, role, details]);
+                row.eachCell(cell => {
+                    cell.font = cellFont;
+                    cell.border = borderStyle;
+                    cell.alignment = { vertical: 'top', wrapText: true };
+                });
+            }
+        });
+    }
+
+    // ====== DOWNLOAD ======
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Audit_Detail_' + (ticketId || scriptNum || 'export') + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log('✓ ExcelJS Audit Detail Download complete!');
 }
 </script>
 

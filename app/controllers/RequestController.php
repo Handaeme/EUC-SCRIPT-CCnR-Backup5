@@ -239,10 +239,13 @@ class RequestController extends Controller {
     }
 
     public function approve() {
+        ob_start(); // Prevent PHP Warnings/Notices from corrupting JSON output
         header('Content-Type: application/json');
+        
         $input = json_decode(file_get_contents('php://input'), true);
         
         if (!isset($input['request_id'])) {
+             ob_clean();
              echo json_encode(['success'=>false, 'error'=>'Missing ID']); return; 
         }
 
@@ -315,6 +318,7 @@ class RequestController extends Controller {
                     $reqModel->updateSelectedPic($req['id'], $input['selected_pic']);
                 } else {
                     // STRICT BACKEND VALIDATION: PIC is Mandatory for SPV Approval
+                    ob_clean();
                     echo json_encode(['success'=>false, 'error'=>'Anda WAJIB memilih PIC sebelum melanjutkan.']); 
                     return;
                 }
@@ -388,12 +392,14 @@ class RequestController extends Controller {
                  
                  // Finalize to Library
                  if (!$reqModel->finalizeLibrary($req['id'])) {
+                     ob_clean();
                      echo json_encode(['success'=>false, 'error'=>'Failed to publish to Library']);
                      return;
                  }
              }
         }
         else {
+             ob_clean();
              echo json_encode(['success'=>false, 'error'=>'Unauthorized Role']);
              return;
         }
@@ -413,6 +419,7 @@ class RequestController extends Controller {
             $errors = function_exists('db_errors') ? db_errors() : 'Unknown Database Error';
             
             error_log("Failed to update status: " . print_r($errors, true));
+            ob_clean();
             echo json_encode(['success'=>false, 'error'=>'Gagal mengupdate status tiket. Detail: ' . print_r($errors, true)]);
             return;
         }
@@ -420,6 +427,7 @@ class RequestController extends Controller {
         $reqModel->setDraftStatus($req['id'], 0); // Clear draft flag
         $reqModel->logAudit($req['id'], $req['script_number'], $auditAction, $currentRole, $_SESSION['user']['userid'], $auditDetails);
 
+        ob_clean();
         echo json_encode(['success'=>true]);
     }
 

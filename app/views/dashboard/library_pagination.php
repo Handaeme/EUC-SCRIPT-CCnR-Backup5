@@ -1,4 +1,4 @@
-<?php if (($totalPages ?? 1) > 1): ?>
+<?php if (($totalPages ?? 1) > 1 || ($totalItems ?? 0) > 0): ?>
 <?php
     // Build base URL preserving all current GET params except 'page' and 'ajax'
     $paginationParams = $_GET;
@@ -13,11 +13,30 @@
     
     $startItem = (($currentPage - 1) * $perPage) + 1;
     $endItem = min($currentPage * $perPage, $totalItems);
+    
+    // Build per-page change URL (reset to page 1)
+    $_libPpParams = $_GET;
+    unset($_libPpParams['page']);
+    unset($_libPpParams['ajax']);
+    unset($_libPpParams['per_page']);
+    $_libPpBase = '?' . http_build_query($_libPpParams);
+    $_libPpOptions = [5, 10, 20, 30, 50];
 ?>
 <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; margin-top:16px; border-top:1px solid #e2e8f0;">
-    <!-- Info -->
-    <div style="font-size:13px; color:#64748b;">
-        Showing <strong><?php echo $startItem; ?>-<?php echo $endItem; ?></strong> of <strong><?php echo $totalItems; ?></strong> scripts
+    <!-- Info + Per Page Selector -->
+    <div style="display:flex; align-items:center; gap:15px;">
+        <div style="font-size:13px; color:#64748b;">
+            Showing <strong><?php echo $startItem; ?>-<?php echo $endItem; ?></strong> of <strong><?php echo $totalItems; ?></strong> scripts
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:#64748b;">
+            <span>Show</span>
+            <select onchange="window.location.href='<?php echo htmlspecialchars($_libPpBase); ?>&per_page='+this.value+'&page=1'" style="padding:4px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#334155; background:white; cursor:pointer;">
+                <?php foreach ($_libPpOptions as $opt): ?>
+                    <option value="<?php echo $opt; ?>" <?php echo ($perPage == $opt) ? 'selected' : ''; ?>><?php echo $opt; ?></option>
+                <?php endforeach; ?>
+            </select>
+            <span>per page</span>
+        </div>
     </div>
     
     <!-- Nav Buttons -->

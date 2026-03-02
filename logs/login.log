@@ -882,3 +882,23 @@
 [2026-02-27 15:14:42] Attempted login for user: proc01
 [2026-02-27 15:14:42] Local login successful for user: proc01
 [2026-02-27 15:14:42] Redirecting proc01 to index.php
+[2026-03-01 01:53:01] Attempted login for user: maker01
+[2026-03-01 01:53:01] Local login successful for user: maker01
+[2026-03-01 01:53:01] Redirecting maker01 to index.php
+[2026-03-01 02:23:53] Attempted login for user: proc01
+[2026-03-01 02:23:53] Local login successful for user: proc01
+[2026-03-01 02:23:53] Redirecting proc01 to index.php
+[2026-03-01 02:24:02] Attempted login for user: spv01
+[2026-03-01 02:24:02] Local login successful for user: spv01
+[2026-03-01 02:24:02] Redirecting spv01 to index.php
+[2026-03-01 02:24:14] Attempted login for user: proc01
+[2026-03-01 02:24:14] Local login successful for user: proc01
+[2026-03-01 02:24:14] Redirecting proc01 to index.php
+[2026-03-01 16:02:43] Attempted login for user: maker01
+[2026-03-01 16:02:43] Local login successful for user: maker01
+[2026-03-01 16:02:43] Redirecting maker01 to index.php
+[2026-03-02 08:17:17] Attempted login for user: maker01
+[2026-03-02 08:17:17] Local login failed for user: maker01
+[2026-03-02 08:17:22] Attempted login for user: maker01
+[2026-03-02 08:17:22] Local login successful for user: maker01
+[2026-03-02 08:17:22] Redirecting maker01 to index.php

@@ -1414,9 +1414,9 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                             <label style="display:block; margin-bottom:5px; font-weight:600; color:#334155; font-size:12px;">DECISION</label>
                             <select id="decision" name="decision" class="form-select" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#334155; outline:none; transition:all 0.2s;" onchange="toggleRemarks()">
                                 <option value="" disabled>-- Select Decision --</option>
-                                <option value="APPROVE" selected>Approve (Acc)</option>
-                                <option value="REVISE">Revise (Perbaikan)</option>
-                                <option value="REJECT">Reject (Tolak)</option>
+                                <option value="APPROVE" selected>Approve</option>
+                                <option value="REVISE">Revise</option>
+                                <option value="REJECT">Reject</option>
                             </select>
                         </div>
         
@@ -1434,7 +1434,7 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                             <?php if (isset($_SESSION['user']['dept']) && strtoupper($_SESSION['user']['dept']) === 'PROCEDURE'): ?>
                             <button type="button" onclick="sendToMakerFlow()" style="width:100%; padding:12px; background:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; box-shadow:0 2px 4px rgba(139, 92, 246, 0.2); height:45px; display:flex; align-items:center; justify-content:center; gap:8px;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"></path><path d="M22 2L15 22L11 13L2 9L22 2Z"></path></svg>
-                                Kirim ke Maker
+                                Konfirmasi ke Maker
                             </button>
                             <?php endif; ?>
                              <button type="button" onclick="saveDraft()" style="width:100%; padding:12px; background:#fff; color:#475569; border:1px solid #e2e8f0; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; height:45px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='#fff'">
@@ -1576,6 +1576,28 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
                     <td id="p-proc-date">-</td>
                     <td id="p-proc-status">In Review</td>
                 </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Revision Documents (Attachments) -->
+    <div class="print-section" id="p-revision-docs-section" style="display:none;">
+        <div class="print-section-title">Revision Documents (Attachments)</div>
+        <table class="print-timeline-table" id="p-revision-docs-table">
+            <colgroup>
+                <col style="width: 18%;">
+                <col style="width: 52%;">
+                <col style="width: 30%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>TYPE</th>
+                    <th>FILE NAME</th>
+                    <th>UPLOAD DATE</th>
+                </tr>
+            </thead>
+            <tbody id="p-revision-docs-body">
+                <!-- Will be injected by JS -->
             </tbody>
         </table>
     </div>
@@ -3718,20 +3740,17 @@ function triggerBadgeUpdate() {
 function performUndo() { 
     const editor = getActiveEditor();
     if (!editor) {
-        // Fallback: Try native if no editor found (e.g. textareas)
         document.execCommand('undo');
         return;
     }
 
     const prev = historyMgr.undo(editor.id, editor.innerHTML);
     if (prev !== null) {
-        // [FIX] Set flag to prevent MutationObserver from preserving removed spans during undo
         window._suppressRevisionPreservation = true;
+        window._isUndoRedoInProgress = true; // [FIX V3] Suppress Janitor
         editor.innerHTML = prev;
         window._suppressRevisionPreservation = false;
         
-        // Restore Listeners (Inner HTML replace kills internal listeners if attached directly, 
-        // but we rely on delegated listeners mostly. EXCEPT cell events in table)
         // Re-attach cell events if table
         if (editor.querySelector('td')) {
             editor.querySelectorAll('td').forEach(cell => {
@@ -3741,15 +3760,12 @@ function performUndo() {
             });
         }
         
-        // [FIX] ORPHAN CARD CLEANUP after Undo
-        // Remove draft/non-draft cards whose spans no longer exist inside any editor
-        // (spans in hidden container don't count — they're preserved for version history, not sidebar)
+        // [FIX V3] ORPHAN CARD CLEANUP after Undo
         const list = document.getElementById('comment-list');
         const hiddenContainer = document.getElementById('deleted-revisions-container');
         if (list) {
             const isSpanInEditor = (id) => {
                 const el = document.getElementById(id) || document.querySelector(`[data-comment-id="${id}"]`);
-                // Span must exist AND not be inside hidden preservation container
                 return el && (!hiddenContainer || !hiddenContainer.contains(el));
             };
             list.querySelectorAll('.comment-card.draft').forEach(card => {
@@ -3761,11 +3777,9 @@ function performUndo() {
                 if (forId && !isSpanInEditor(forId)) card.remove();
             });
         }
-
-        // Also clear spans from hidden container that were put there by previous (non-undo) operations
-        // but whose content was just undone back into the editor
         
-        renderSideComments();
+        // [FIX V3] Do NOT call renderSideComments here — it will be called
+        // AFTER DELETED_SPANS sync in the keydown handler.
         triggerBadgeUpdate();
     }
 }
@@ -3779,8 +3793,8 @@ function performRedo() {
 
     const next = historyMgr.redo(editor.id, editor.innerHTML);
     if (next !== null) {
-        // [FIX] Set flag to prevent MutationObserver from preserving removed spans during redo
         window._suppressRevisionPreservation = true;
+        window._isUndoRedoInProgress = true; // [FIX V3] Suppress Janitor
         editor.innerHTML = next;
         window._suppressRevisionPreservation = false;
         
@@ -3793,7 +3807,26 @@ function performRedo() {
             });
         }
         
-        renderSideComments();
+        // [FIX V3] ORPHAN CARD CLEANUP after Redo (same as Undo)
+        const list = document.getElementById('comment-list');
+        const hiddenContainer = document.getElementById('deleted-revisions-container');
+        if (list) {
+            const isSpanInEditor = (id) => {
+                const el = document.getElementById(id) || document.querySelector(`[data-comment-id="${id}"]`);
+                return el && (!hiddenContainer || !hiddenContainer.contains(el));
+            };
+            list.querySelectorAll('.comment-card.draft').forEach(card => {
+                const revId = card.id.replace('card-', '');
+                if (!isSpanInEditor(revId)) card.remove();
+            });
+            list.querySelectorAll('.comment-card:not(.draft)').forEach(card => {
+                const forId = card.getAttribute('data-for');
+                if (forId && !isSpanInEditor(forId)) card.remove();
+            });
+        }
+        
+        // [FIX V3] Do NOT call renderSideComments here — it will be called
+        // AFTER DELETED_SPANS sync in the keydown handler.
         triggerBadgeUpdate();
     }
 }
@@ -4694,13 +4727,18 @@ console.log('[ZOMBIE HUNTER] Observer started with Instant Cleanup (V12)');
     // [FIX V11] Robust Card Cleanup (The Janitor)
 // Periodically checks if cards exist for non-existent or empty spans
 function cleanupZombieCards() {
+    // [FIX V3] SKIP CLEANUP during undo/redo to prevent killing valid spans
+    if (window._isUndoRedoInProgress) {
+        console.log('[JANITOR] Skipping — undo/redo in progress');
+        return;
+    }
+    
     const cards = document.querySelectorAll('.comment-card');
     cards.forEach(card => {
         const spanId = card.getAttribute('data-for');
         if (!spanId) return;
 
         // [FIX] Ignore Legacy IDs for Janitor cleanup (Protection Mode)
-        // Legacy spans might not be found by ID immediately, so we trust they exist.
         if (spanId.startsWith('legacy-')) return; 
 
         const span = document.getElementById(spanId);
@@ -4709,26 +4747,20 @@ function cleanupZombieCards() {
         const hasContent = (element) => {
             if (!element) return false;
             const text = element.innerText || element.textContent || "";
-            // Remove ZWSP and whitespace
             const clean = text.replace(/\u200B/g, '').trim();
             return clean.length > 0;
         };
 
-        // Condition to kill: Span gone OR Span empty OR [V18] Span in Death Note
-        // [FIX] Disable Blacklist check for Janitor to prevent false positives
-        const isBlacklisted = false; // (typeof DELETED_SPANS !== 'undefined' && DELETED_SPANS.has(spanId));
+        const isBlacklisted = false;
         
         if (!span || !hasContent(span) || isBlacklisted) {
-            // [FIX] CRITICAL: Add to Death Note so Backend Sanitizer kills it
             if(span && span.id) DELETED_SPANS.add(span.id); 
             
             console.log(`[JANITOR] Removing orphan card & span for ID: ${spanId}`);
             card.remove();
             
-            // Also remove span if it's empty but still in DOM
             if (span) span.remove();
             
-            // Refresh Badges (Notif Pentung)
             if(typeof updateSheetTabBadges === 'function') updateSheetTabBadges();
         }
     });
@@ -4820,12 +4852,15 @@ document.addEventListener('keydown', (e) => {
                     }
                 }
 
-                // Force UI Sync
-                cleanupZombieCards();
+                // [FIX V3] Release Janitor guard AFTER DELETED_SPANS sync
+                window._isUndoRedoInProgress = false;
+                
+                // [FIX V3] NOW render sidebar — DELETED_SPANS is fully synced
                 if(typeof renderSideComments === 'function') renderSideComments();
                 if(typeof updateSheetTabBadges === 'function') updateSheetTabBadges();
+                if(typeof updateFreeInputTabBadges === 'function') updateFreeInputTabBadges();
                 
-            }, 100);
+            }, 150);
         } else {
             // Not in an editable area — let browser handle natively
             console.log(`[HISTORY] Native ${isUndo ? 'UNDO' : 'REDO'} (No active editor)`);
@@ -5422,8 +5457,66 @@ function handleBeforeInput(e) {
             textToStrike = range.toString();
         } else {
             // NO SELECTION: Get single character to strike
-            const node = sel.anchorNode;
-            const offset = sel.anchorOffset;
+            let node = sel.anchorNode;
+            let offset = sel.anchorOffset;
+            
+            // [FIX V3] BOUNDARY WALKER: When cursor is at offset 0 of a text node,
+            // walk backwards through sibling/parent nodes to find the previous character.
+            // This allows backspace to cross word and element boundaries.
+            if (node && node.nodeType === Node.TEXT_NODE && e.inputType === 'deleteContentBackward' && offset === 0) {
+                let walker = node.previousSibling;
+                // Skip deletion spans and empty text nodes
+                while (walker) {
+                    if (walker.nodeType === Node.TEXT_NODE && walker.textContent.length > 0) {
+                        node = walker;
+                        offset = walker.textContent.length;
+                        break;
+                    } else if (walker.nodeType === 1 && walker.classList && walker.classList.contains('deletion-span')) {
+                        walker = walker.previousSibling;
+                        continue;
+                    } else if (walker.nodeType === 1 && walker.lastChild) {
+                        // Descend into element to find its last text node
+                        let deepNode = walker;
+                        while (deepNode.lastChild) deepNode = deepNode.lastChild;
+                        if (deepNode.nodeType === Node.TEXT_NODE && deepNode.textContent.length > 0) {
+                            node = deepNode;
+                            offset = deepNode.textContent.length;
+                            break;
+                        }
+                        walker = walker.previousSibling;
+                        continue;
+                    } else if (walker.nodeType === Node.TEXT_NODE && walker.textContent.length === 0) {
+                        walker = walker.previousSibling;
+                        continue;
+                    }
+                    break;
+                }
+                // If still at offset 0, try parent's previous sibling
+                if (offset === 0 && node.parentNode) {
+                    let parentPrev = node.parentNode.previousSibling;
+                    while (parentPrev) {
+                        if (parentPrev.nodeType === Node.TEXT_NODE && parentPrev.textContent.length > 0) {
+                            node = parentPrev;
+                            offset = parentPrev.textContent.length;
+                            break;
+                        } else if (parentPrev.nodeType === 1 && parentPrev.classList && parentPrev.classList.contains('deletion-span')) {
+                            parentPrev = parentPrev.previousSibling;
+                            continue;
+                        } else if (parentPrev.nodeType === 1) {
+                            let deepNode = parentPrev;
+                            while (deepNode.lastChild) deepNode = deepNode.lastChild;
+                            if (deepNode.nodeType === Node.TEXT_NODE && deepNode.textContent.length > 0) {
+                                node = deepNode;
+                                offset = deepNode.textContent.length;
+                                break;
+                            }
+                            parentPrev = parentPrev.previousSibling;
+                            continue;
+                        }
+                        break;
+                    }
+                }
+            }
             
             if (node && node.nodeType === Node.TEXT_NODE) {
                 if (e.inputType === 'deleteContentBackward' && offset > 0) {
@@ -5442,9 +5535,16 @@ function handleBeforeInput(e) {
                     // Look for text node before cursor position
                     let prevNode = offset > 0 ? node.childNodes[offset - 1] : null;
                     // If prevNode is a deletion span, skip (already struck)
-                    if (prevNode && prevNode.classList && prevNode.classList.contains('deletion-span')) {
-                        // Try the node before the deletion span
+                    while (prevNode && prevNode.nodeType === 1 && prevNode.classList && prevNode.classList.contains('deletion-span')) {
                         prevNode = prevNode.previousSibling;
+                    }
+                    // If prevNode is an element (not deletion), get its last text node
+                    if (prevNode && prevNode.nodeType === 1 && !prevNode.classList.contains('deletion-span')) {
+                        let deepNode = prevNode;
+                        while (deepNode.lastChild) deepNode = deepNode.lastChild;
+                        if (deepNode.nodeType === Node.TEXT_NODE && deepNode.textContent.length > 0) {
+                            prevNode = deepNode;
+                        }
                     }
                     if (prevNode && prevNode.nodeType === Node.TEXT_NODE && prevNode.textContent.length > 0) {
                         textToStrike = prevNode.textContent.charAt(prevNode.textContent.length - 1);
@@ -5453,8 +5553,15 @@ function handleBeforeInput(e) {
                     }
                 } else if (e.inputType === 'deleteContentForward') {
                     let nextNode = offset < node.childNodes.length ? node.childNodes[offset] : null;
-                    if (nextNode && nextNode.classList && nextNode.classList.contains('deletion-span')) {
+                    while (nextNode && nextNode.nodeType === 1 && nextNode.classList && nextNode.classList.contains('deletion-span')) {
                         nextNode = nextNode.nextSibling;
+                    }
+                    if (nextNode && nextNode.nodeType === 1) {
+                        let deepNode = nextNode;
+                        while (deepNode.firstChild) deepNode = deepNode.firstChild;
+                        if (deepNode.nodeType === Node.TEXT_NODE && deepNode.textContent.length > 0) {
+                            nextNode = deepNode;
+                        }
                     }
                     if (nextNode && nextNode.nodeType === Node.TEXT_NODE && nextNode.textContent.length > 0) {
                         textToStrike = nextNode.textContent.charAt(0);
@@ -5465,7 +5572,8 @@ function handleBeforeInput(e) {
             }
         }
         
-        if (!textToStrike || textToStrike.trim().length === 0) {
+        // [FIX V3] Allow deletion of spaces — removed .trim() check that blocked space deletion
+        if (!textToStrike || textToStrike.length === 0) {
             window._suppressRevisionPreservation = false;
             return;
         }
@@ -6707,6 +6815,42 @@ function printTicketScript() {
             } else {
                  container.innerHTML = '<div style="font-style:italic;">No visible script content found.</div>';
             }
+        }
+    }
+
+    // 2.5 Populate Revision Documents Table
+    if (typeof REVIEW_EVIDENCE !== 'undefined') {
+        const docTypes = [
+            { key: 'LEGAL', label: 'Legal' },
+            { key: 'CX', label: 'CX' },
+            { key: 'SYARIAH', label: 'Legal Syariah' },
+            { key: 'LPP', label: 'LPP' }
+        ];
+        const tbody = document.getElementById('p-revision-docs-body');
+        const section = document.getElementById('p-revision-docs-section');
+        if (tbody && section) {
+            tbody.innerHTML = '';
+            let hasAnyFile = false;
+            docTypes.forEach(dt => {
+                const files = REVIEW_EVIDENCE[dt.key];
+                if (files && files.length > 0) {
+                    hasAnyFile = true;
+                    files.forEach((file, idx) => {
+                        const tr = document.createElement('tr');
+                        // Only show type label on first row for this type
+                        const typeLabel = (idx === 0) ? dt.label : '';
+                        const uploadDate = file.uploaded_at ? formatDate(file.uploaded_at) : '-';
+                        tr.innerHTML = `<td style="font-weight:bold;">${typeLabel}</td><td>${file.filename || '-'}</td><td>${uploadDate}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td style="font-weight:bold;">${dt.label}</td><td style="color:#999; font-style:italic;">Belum diunggah</td><td>-</td>`;
+                    tbody.appendChild(tr);
+                }
+            });
+            // Only show section if at least one file exists
+            section.style.display = hasAnyFile ? 'block' : 'none';
         }
     }
 

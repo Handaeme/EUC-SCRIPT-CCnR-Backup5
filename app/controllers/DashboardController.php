@@ -299,7 +299,8 @@ class DashboardController extends Controller {
         $allLibraryItems = $reqModel->getLibraryItemsWithContent($startDate, $endDate, $sortPublished, $filters, $showInactive, $sortBy, $dateType, $search);
         
         // === PAGINATION LOGIC ===
-        $perPage = 10;
+        $perPage = intval($_GET['per_page'] ?? 10);
+        if (!in_array($perPage, [5, 10, 20, 30, 50])) $perPage = 10;
         $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
         $totalItems = count($allLibraryItems);
         $totalPages = max(1, ceil($totalItems / $perPage));
