@@ -2707,6 +2707,14 @@ String.prototype.hashCode = function() {
 };
 
 // --- SIDEBAR RENDER ---
+// [FIX] Helper: Escape HTML to prevent <nama> etc from being parsed as tags in innerHTML
+function escHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
 function renderSideComments() {
     const list = document.getElementById('comment-list');
     const sidebar = document.getElementById('comment-sidebar');
@@ -2944,7 +2952,7 @@ function renderSideComments() {
         if (isDeletion) {
             const deletedText = c.element.getAttribute('data-deleted-text') || c.text;
             const preview = deletedText.length > 40 ? deletedText.substring(0, 40) + '...' : deletedText;
-            deletionBadge = `<div style="font-size:11px; color:#d97706; margin-top:4px; font-weight:600;">🗑 Deleted: "${preview}"</div>`;
+            deletionBadge = `<div style="font-size:11px; color:#d97706; margin-top:4px; font-weight:600;">🗑 Deleted: "${escHtml(preview)}"</div>`;
         }
 
         if (isRevision && c.element) {
@@ -2983,7 +2991,7 @@ function renderSideComments() {
                         byInfo = ` <span style="color:#64748b; font-weight:400;">(by ${replacedUser}${roleLabel})</span>`;
                     }
                     
-                    replacesBadge = `<div onclick="window.viewRevisionHistory && viewRevisionHistory('${c.id}')" style="font-size:11px; color:#ef4444; margin-top:6px; font-weight:500; cursor:pointer; line-height:1.4;" title="Click to view full history">Replaces: "${preview}"${byInfo}</div>`;
+                    replacesBadge = `<div onclick="window.viewRevisionHistory && viewRevisionHistory('${c.id}')" style="font-size:11px; color:#ef4444; margin-top:6px; font-weight:500; cursor:pointer; line-height:1.4;" title="Click to view full history">Replaces: "${escHtml(preview)}"${byInfo}</div>`;
             }
         }
         
@@ -3027,14 +3035,14 @@ function renderSideComments() {
                     if (text.length > threshold) {
                          return `
                             <div id="content-${c.id}" style="max-height: 60px; overflow: hidden; transition: max-height 0.3s ease; mask-image: linear-gradient(to bottom, black 50%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
-                                ${text}
+                                ${escHtml(text)}
                             </div>
                             <div id="toggle-${c.id}" onclick="event.stopPropagation(); toggleLongText('${c.id}')" style="color:#0369a1; cursor:pointer; font-size:12px; font-weight:600; margin-top:4px;">
                                 Read More
                             </div>
                          `;
                     }
-                    return text;
+                    return escHtml(text);
                 })()}
             </div>
         `;
@@ -3310,7 +3318,7 @@ function renderPopupItems(items, container) {
         if (isDeletion) {
             const deletedText = c.element.getAttribute('data-deleted-text') || c.text;
             const preview = deletedText.length > 60 ? deletedText.substring(0, 60) + '...' : deletedText;
-            deletionBadge = `<div style="font-size:11px; color:#d97706; margin-top:4px; font-weight:600;">🗑 Deleted: "${preview}"</div>`;
+            deletionBadge = `<div style="font-size:11px; color:#d97706; margin-top:4px; font-weight:600;">🗑 Deleted: "${escHtml(preview)}"</div>`;
         }
         
         // Replaces badge (for revisions that replaced text)
@@ -3321,7 +3329,7 @@ function renderPopupItems(items, container) {
             if (replacedText) {
                 const rPreview = replacedText.length > 50 ? replacedText.substring(0, 50) + '...' : replacedText;
                 const byInfo = replacedUser ? ` <span style="color:#64748b;">(by ${replacedUser})</span>` : '';
-                replacesBadge = `<div style="font-size:11px; color:#ef4444; margin-top:4px; font-weight:500;">Replaces: "${rPreview}"${byInfo}</div>`;
+                replacesBadge = `<div style="font-size:11px; color:#ef4444; margin-top:4px; font-weight:500;">Replaces: "${escHtml(rPreview)}"${byInfo}</div>`;
             }
         }
         
@@ -3361,7 +3369,7 @@ function renderPopupItems(items, container) {
                     </div>
                 </div>
                 <div style="background:#f8fafc; border:1px solid #f1f5f9; border-radius:8px; padding:12px; font-size:14px; color:#334155; line-height:1.6; ${textStyle}">
-                    ${textContent}
+                    ${escHtml(textContent)}
                 </div>
             </div>
         `;
@@ -5460,13 +5468,20 @@ function handleBeforeInput(e) {
             let node = sel.anchorNode;
             let offset = sel.anchorOffset;
             
-            // [FIX V3] BOUNDARY WALKER: When cursor is at offset 0 of a text node,
-            // walk backwards through sibling/parent nodes to find the previous character.
-            // This allows backspace to cross word and element boundaries.
+            // [FIX V4] BOUNDARY WALKER: When cursor is at offset 0 of a text node,
+            // walk backwards through sibling nodes to find the previous character.
+            // LIMIT: Max 5 hops to prevent merging distant deletions.
+            // CONTAINMENT: Never leave the current editor pane.
             if (node && node.nodeType === Node.TEXT_NODE && e.inputType === 'deleteContentBackward' && offset === 0) {
+                const editorContainer = node.parentNode?.closest?.('.media-pane, .review-editor, [contenteditable="true"]');
                 let walker = node.previousSibling;
-                // Skip deletion spans and empty text nodes
-                while (walker) {
+                let hops = 0;
+                const MAX_HOPS = 5;
+                // Skip deletion spans and empty text nodes (sibling level only)
+                while (walker && hops < MAX_HOPS) {
+                    hops++;
+                    // Containment: stop if walker is outside our editor
+                    if (editorContainer && !editorContainer.contains(walker)) break;
                     if (walker.nodeType === Node.TEXT_NODE && walker.textContent.length > 0) {
                         node = walker;
                         offset = walker.textContent.length;
@@ -5491,31 +5506,8 @@ function handleBeforeInput(e) {
                     }
                     break;
                 }
-                // If still at offset 0, try parent's previous sibling
-                if (offset === 0 && node.parentNode) {
-                    let parentPrev = node.parentNode.previousSibling;
-                    while (parentPrev) {
-                        if (parentPrev.nodeType === Node.TEXT_NODE && parentPrev.textContent.length > 0) {
-                            node = parentPrev;
-                            offset = parentPrev.textContent.length;
-                            break;
-                        } else if (parentPrev.nodeType === 1 && parentPrev.classList && parentPrev.classList.contains('deletion-span')) {
-                            parentPrev = parentPrev.previousSibling;
-                            continue;
-                        } else if (parentPrev.nodeType === 1) {
-                            let deepNode = parentPrev;
-                            while (deepNode.lastChild) deepNode = deepNode.lastChild;
-                            if (deepNode.nodeType === Node.TEXT_NODE && deepNode.textContent.length > 0) {
-                                node = deepNode;
-                                offset = deepNode.textContent.length;
-                                break;
-                            }
-                            parentPrev = parentPrev.previousSibling;
-                            continue;
-                        }
-                        break;
-                    }
-                }
+                // [FIX V4] REMOVED parent traversal — only walk siblings
+                // Parent traversal was causing distant text nodes to merge into one deletion span
             }
             
             if (node && node.nodeType === Node.TEXT_NODE) {
@@ -5586,30 +5578,28 @@ function handleBeforeInput(e) {
             return;
         }
         
-        // [FIX] CONSECUTIVE DELETE: Check for adjacent deletion span to extend
+        // [FIX V2] CONSECUTIVE DELETE: Check for adjacent deletion span to extend
+        // CRITICAL: Only merge if the character being deleted is actually AT THE BOUNDARY
+        // of the text node (right next to the deletion span). Otherwise distant chars get merged.
         let adjacentStrike = null;
         if (range.collapsed && targetNode) {
             if (e.inputType === 'deleteContentBackward') {
-                // Backspace: check if there's a deletion span RIGHT AFTER the char being deleted
-                // (Because previous backspace placed cursor before its strikethrough span)
+                // Backspace: only merge with next deletion span if we're deleting the LAST char
+                // of this text node (targetOffset === textContent.length means cursor is at end)
                 let nextSib = targetNode.nextSibling;
-                // After splitting, the next sibling might be the afterNode text, and the span is after that
-                // Actually let's check: after we remove a char and place strikethrough, cursor is BEFORE the span
-                // So on next backspace, targetNode is the text BEFORE the span, nextSibling IS the span
                 if (nextSib && nextSib.classList && nextSib.classList.contains('deletion-span')) {
-                    adjacentStrike = nextSib;
-                }
-                // Also check: cursor might be right at offset 0 of a text node that follows a deletion span
-                if (!adjacentStrike && targetOffset === 1) {
-                    // The char we're striking is at position 0 of targetNode
-                    // Check if previous sibling is a deletion span
-                    // No — for backspace, we want to PREPEND to the span that comes AFTER
+                    // Only merge if the char being deleted (at targetOffset-1) is the last char
+                    if (targetOffset === targetNode.textContent.length) {
+                        adjacentStrike = nextSib;
+                    }
                 }
             } else if (e.inputType === 'deleteContentForward') {
-                // Delete key: check if there's a deletion span RIGHT BEFORE
+                // Delete key: only merge with previous deletion span if deleting the FIRST char
                 let prevSib = targetNode.previousSibling;
                 if (prevSib && prevSib.classList && prevSib.classList.contains('deletion-span')) {
-                    adjacentStrike = prevSib;
+                    if (targetOffset === 0) {
+                        adjacentStrike = prevSib;
+                    }
                 }
             }
         }
