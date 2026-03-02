@@ -1757,10 +1757,22 @@ $reviewEvidence = [
 if (!empty($files)) {
     foreach ($files as $f) {
         if (array_key_exists($f['file_type'], $reviewEvidence)) {
+            // [FIX] Format server date properly for Office Server (Handles sqlsrv DateTime object vs String)
+            $uploadedAtSafe = null;
+            if (!empty($f['uploaded_at'])) {
+                if ($f['uploaded_at'] instanceof \DateTime) {
+                    $uploadedAtSafe = $f['uploaded_at']->format('Y-m-d H:i:s');
+                } else if (is_string($f['uploaded_at'])) {
+                    $uploadedAtSafe = date('Y-m-d H:i:s', strtotime($f['uploaded_at']));
+                } else {
+                    $uploadedAtSafe = $f['uploaded_at'];
+                }
+            }
+
             $reviewEvidence[$f['file_type']][] = [
                 'id' => $f['id'],
                 'filename' => $f['original_filename'],
-                'uploaded_at' => $f['uploaded_at'] ?? null,
+                'uploaded_at' => $uploadedAtSafe,
                 'uploaded_by' => $f['uploaded_by'] ?? null
             ];
         }
@@ -4499,7 +4511,17 @@ async function handleReviewDocUpload(fileInput, docType) {
         if (json.success) {
             // Append to List
             if (!REVIEW_EVIDENCE[docType]) REVIEW_EVIDENCE[docType] = [];
-            REVIEW_EVIDENCE[docType].push({ id: json.id, filename: file.name });
+            
+            // [FIX] Assign current local time immediately so it appears on Ticket before page refresh
+            const n = new Date();
+            const pad = num => num.toString().padStart(2, '0');
+            const localIso = `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())} ${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+            
+            REVIEW_EVIDENCE[docType].push({
+                id: json.id, 
+                filename: file.name,
+                uploaded_at: localIso
+            });
             
             // Render UI
             if (container) {
