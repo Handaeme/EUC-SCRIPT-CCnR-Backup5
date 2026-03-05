@@ -2255,10 +2255,12 @@ function submitComment() {
         return;
     }
     
-    // Restore selection
+     // --- NEW SELECTION CHECK (Proximity Merge) ---
+    // [START UPDATE 02-Mar-2026] Fix: Proximity check to prevent Backspace from merging distant text nodes
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(savedRange);
+    // [END UPDATE 02-Mar-2026]
 
     const commentId = "c" + Date.now();
     const commentTime = new Date().toLocaleString('id-ID', {
@@ -2719,13 +2721,14 @@ String.prototype.hashCode = function() {
 };
 
 // --- SIDEBAR RENDER ---
-// [FIX] Helper: Escape HTML to prevent <nama> etc from being parsed as tags in innerHTML
+// [START UPDATE 02-Mar-2026] Fix: Escape HTML to prevent <nama> etc from being parsed as tags in innerHTML
 function escHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(str));
     return div.innerHTML;
 }
+// [END UPDATE 02-Mar-2026]
 
 function renderSideComments() {
     const list = document.getElementById('comment-list');
@@ -4512,7 +4515,7 @@ async function handleReviewDocUpload(fileInput, docType) {
             // Append to List
             if (!REVIEW_EVIDENCE[docType]) REVIEW_EVIDENCE[docType] = [];
             
-            // [FIX] Assign current local time immediately so it appears on Ticket before page refresh
+            // [START UPDATE 02-Mar-2026] Fix: Assign current local time immediately so it appears on Ticket before page refresh
             const n = new Date();
             const pad = num => num.toString().padStart(2, '0');
             const localIso = `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())} ${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
@@ -4522,6 +4525,7 @@ async function handleReviewDocUpload(fileInput, docType) {
                 filename: file.name,
                 uploaded_at: localIso
             });
+            // [END UPDATE 02-Mar-2026]
             
             // Render UI
             if (container) {

@@ -72,7 +72,7 @@ $historyCount = $stats['history'] ?? 0;
     <?php endif; ?>
 
     <div class="card">
-        <!-- Advanced Filter Bar -->
+        <!-- [START UPDATE 28-Feb-2026] Feature: Advanced Filter Bar (Status, Kategori, Keyword Search) -->
         <div class="filter-bar" style="margin-bottom:20px; background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
             <form method="GET">
                 <input type="hidden" name="controller" value="dashboard">
@@ -229,6 +229,7 @@ $historyCount = $stats['history'] ?? 0;
 
             </form>
         </div>
+        <!-- [END UPDATE 28-Feb-2026] -->
         
         <?php if ($currentViewMode === 'pending'): ?>
         <!-- ====== PENDING APPROVAL TABLE ====== -->

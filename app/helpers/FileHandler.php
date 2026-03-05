@@ -66,8 +66,9 @@ class FileHandler {
             $parsedSheets = [];
             
             foreach ($sheets as $index => $sheet) {
-                // Skip the first sheet (Petunjuk_Pengisian) as per requirement
-                if ($index === 0) continue;
+                // Smart skip: only skip if the name looks like "Petunjuk_Pengisian" instructions sheet
+                $nameNorm = strtolower(str_replace(['_', ' '], '', $sheet['name']));
+                if (strpos($nameNorm, 'petunjukpengisian') !== false && count($sheets) > 1) continue;
 
                 $rid = $sheet['rId'];
                 $target = isset($rels[$rid]) ? 'xl/' . $rels[$rid] : 'xl/worksheets/sheet' . ($index + 1) . '.xml';
@@ -86,8 +87,8 @@ class FileHandler {
             $uniqueId = time() . rand(1000, 9999); 
             $html = '<div class="sheet-container" id="container-' . $uniqueId . '">';
             
-            // TABS HEADER (Protected from editing)
-            $html .= '<div class="sheet-tabs-nav" contenteditable="false">';
+            // TABS HEADER (Protected from editing) — Modern Pill Style matching Library Detail
+            $html .= '<div style="display:flex; gap:10px; border-bottom:1px solid #e5e7eb; padding-bottom:12px; margin-bottom:20px; overflow-x:auto;" contenteditable="false">';
             
             $visibleCount = 0;
             foreach ($parsedSheets as $index => $pSheet) {
@@ -97,14 +98,19 @@ class FileHandler {
                 if (strpos($sheetNameNormal, 'petunjukpengisian') !== false && count($parsedSheets) > 1) continue;
 
                 $visibleCount++;
-                $activeClass = ($visibleCount === 1) ? 'active' : '';
                 $safeName = htmlspecialchars($pSheet['name']);
                 
                 // Unique ID construction
                 $sheetId = 'sheet-' . $uniqueId . '-' . ($index + 1); 
-                $btnId = 'btn-' . $sheetId;
+
+                // Active = blue pill, Inactive = gray pill
+                if ($visibleCount === 1) {
+                    $btnStyle = "background: #3b82f6; color: white; border: none;";
+                } else {
+                    $btnStyle = "background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;";
+                }
                 
-                $html .= "<button type='button' id='$btnId' class='btn-sheet $activeClass' onclick=\"changeSheet('$sheetId')\">$safeName</button>";
+                $html .= "<button type='button' id='btn-sheet-$visibleCount' class='btn-sheet-tab' style='padding:8px 20px; border-radius:30px; cursor:pointer; font-weight:600; font-size:13px; transition:all 0.2s; white-space:nowrap; $btnStyle' onclick=\"changeSheet('$sheetId', $visibleCount)\">$safeName</button>";
             }
             $html .= '</div>'; // End Tabs
 

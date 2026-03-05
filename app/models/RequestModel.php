@@ -555,13 +555,10 @@ class RequestModel {
         }
 
         // 4. Duplicate Request Record
-        $sql = "INSERT INTO script_request (
-                    ticket_id, script_number, title, jenis, produk, kategori, media, mode, 
-                    status, current_role, version, created_by, selected_spv, created_at, updated_at, start_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT_TEMP', 'Maker', ?, ?, ?, GETDATE(), GETDATE(), ?); 
-                SELECT SCOPE_IDENTITY() as id";
-        
-        $title = $original['title'] . " (Rev $newVersion)";
+        // [START UPDATE 02-Mar-2026] Fix: Build query dynamically to support databases where start_date might not exist yet
+        $hasStartDate = isset($original['start_date']);
+        $columns = "ticket_id, script_number, title, jenis, produk, kategori, media, mode, status, current_role, version, created_by, selected_spv, created_at, updated_at";
+        $valuesStr = "?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT_TEMP', 'Maker', ?, ?, ?, GETDATE(), GETDATE()";
         
         $params = [
             $newTicketId,
@@ -574,13 +571,20 @@ class RequestModel {
             $original['mode'],
             $newVersion,
             $creatorId,
-            $newSpvId, // Use NEW SPV selection
-            $original['start_date'] // Inherit start_date from original
+            $newSpvId // Use NEW SPV selection
         ];
 
+        if ($hasStartDate) {
+            $columns .= ", start_date";
+            $valuesStr .= ", ?";
+            $params[] = $original['start_date'];
+        }
+
+        $sql = "INSERT INTO script_request ($columns) VALUES ($valuesStr); SELECT SCOPE_IDENTITY() as id";
         $stmt = db_query($this->conn, $sql, $params);
+        // [END UPDATE 02-Mar-2026]
         if ($stmt === false) {
-             return ['error' => 'Failed to create revision record'];
+             return ['error' => 'Failed to create revision record: ' . json_encode(db_errors())];
         }
         db_next_result($stmt);
         $row = db_fetch_array($stmt, DB_FETCH_ASSOC);
@@ -901,7 +905,23 @@ class RequestModel {
         }
 
         // Advanced Filters (Multi-Select)
-        // Filters expected structure: ['jenis' => ['Konvensional', 'Syariah'], 'produk' => [...], ...]
+        // Filters expected structure: ['status' => ['Active'], 'jenis' => ['Konvensional', 'Syariah'], ...]
+        
+        // Handle Status Filter Specifically (Active/Inactive mapped to l.is_active = 1/0)
+        if (!empty($filters['status']) && is_array($filters['status'])) {
+            $statusClauses = [];
+            if (in_array('Active', $filters['status'])) {
+                $statusClauses[] = "l.is_active = 1";
+            }
+            if (in_array('Inactive', $filters['status'])) {
+                $statusClauses[] = "(l.is_active = 0 OR l.is_active IS NULL)";
+            }
+            
+            if (!empty($statusClauses)) {
+                $whereClauses[] = "(" . implode(' OR ', $statusClauses) . ")";
+            }
+        }
+
         $filterableColumns = ['jenis', 'produk', 'kategori'];
         foreach ($filterableColumns as $col) {
             if (!empty($filters[$col]) && is_array($filters[$col])) {
@@ -1699,7 +1719,6 @@ class RequestModel {
         
         // precise regex: ends with hyphen and 2 digits
         if (preg_match('/-(\d{2})$/', $scriptNumber)) {
-            // It's a Child (Versioned) -> Strip suffix to get Parent
             $baseExact = preg_replace('/-(\d{2})$/', '', $scriptNumber);
             $basePattern = $baseExact . '-%';
         } 
@@ -2190,4 +2209,220 @@ class RequestModel {
         }
         return date('Y-m-d'); // fallback
     }
+
+    /**
+     * Get library statistics grouped by jenis, produk, kategori, media.
+     * Used for the Library Dashboard stats ribbon.
+     */
+    public function getLibraryStatistics() {
+        $stats = [
+            'total' => 0,
+            'by_jenis' => [],
+            'by_produk' => [],
+            'by_kategori' => [],
+            'by_media' => []
+        ];
+
+        // Total count
+        $sql = "SELECT COUNT(DISTINCT request_id) as cnt FROM script_library";
+        $stmt = db_query($this->conn, $sql);
+        if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+            $stats['total'] = (int)$row['cnt'];
+        }
+
+        // By Jenis (lives in script_request, not script_library)
+        $sql = "SELECT r.jenis as val, COUNT(DISTINCT sl.request_id) as cnt 
+                FROM script_library sl 
+                JOIN script_request r ON r.id = sl.request_id
+                WHERE r.jenis IS NOT NULL AND r.jenis != '' 
+                GROUP BY r.jenis 
+                ORDER BY cnt DESC";
+        $stmt = db_query($this->conn, $sql);
+        if ($stmt) {
+            while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $stats['by_jenis'][$row['val']] = (int)$row['cnt'];
+            }
+        }
+
+        // By Produk (lives in script_request)
+        $sql = "SELECT r.produk as val, COUNT(DISTINCT sl.request_id) as cnt 
+                FROM script_library sl 
+                JOIN script_request r ON r.id = sl.request_id
+                WHERE r.produk IS NOT NULL AND r.produk != '' 
+                GROUP BY r.produk 
+                ORDER BY cnt DESC";
+        $stmt = db_query($this->conn, $sql);
+        if ($stmt) {
+            while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $stats['by_produk'][$row['val']] = (int)$row['cnt'];
+            }
+        }
+
+        // By Kategori (lives in script_request)
+        $sql = "SELECT r.kategori as val, COUNT(DISTINCT sl.request_id) as cnt 
+                FROM script_library sl 
+                JOIN script_request r ON r.id = sl.request_id
+                WHERE r.kategori IS NOT NULL AND r.kategori != '' 
+                GROUP BY r.kategori 
+                ORDER BY cnt DESC";
+        $stmt = db_query($this->conn, $sql);
+        if ($stmt) {
+            while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $stats['by_kategori'][$row['val']] = (int)$row['cnt'];
+            }
+        }
+
+        // By Media (Use script_request r.media instead of sl.media)
+        // Reason: sl.media in script_library might contain Excel Sheet names (e.g. "Robo_CC") for Robocoll scripts.
+        // r.media in script_request contains the true canonical media like "Robocoll" or "WhatsApp". 
+        $sql = "SELECT r.media as val, COUNT(DISTINCT sl.request_id) as cnt 
+                FROM script_library sl 
+                JOIN script_request r ON r.id = sl.request_id
+                WHERE r.media IS NOT NULL AND r.media != '' 
+                GROUP BY r.media 
+                ORDER BY cnt DESC";
+        $stmt = db_query($this->conn, $sql);
+        if ($stmt) {
+            while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $stats['by_media'][$row['val']] = (int)$row['cnt'];
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get all data needed for the Library Dashboard page.
+     * Returns KPIs, chart breakdowns, trend data, recent scripts, recent audit.
+     */
+    public function getLibraryDashboardStats() {
+        $data = [];
+
+        // ── KPI: TOTALS ──
+        $sql = "SELECT 
+                    COUNT(DISTINCT request_id) as total_all,
+                    SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as total_active,
+                    SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as total_inactive
+                FROM (
+                    SELECT request_id, MAX(CAST(is_active AS INT)) as is_active
+                    FROM script_library
+                    GROUP BY request_id
+                ) t";
+        $stmt = db_query($this->conn, $sql);
+        if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+            $data['total_all']      = (int)($row['total_all'] ?? 0);
+            $data['total_active']   = (int)($row['total_active'] ?? 0);
+            $data['total_inactive'] = (int)($row['total_inactive'] ?? 0);
+        } else {
+            $data['total_all'] = $data['total_active'] = $data['total_inactive'] = 0;
+        }
+
+        // ── KPI: ADDED THIS MONTH ──
+        $sql = "SELECT COUNT(DISTINCT request_id) as cnt FROM script_library
+                WHERE MONTH(created_at) = MONTH(GETDATE()) AND YEAR(created_at) = YEAR(GETDATE())";
+        $stmt = db_query($this->conn, $sql);
+        $data['added_this_month'] = ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) ? (int)$row['cnt'] : 0;
+
+        // ── KPI: PENDING APPROVALS (scripts waiting for someone to act) ──
+        $sql = "SELECT COUNT(*) as cnt FROM script_request 
+                WHERE status IN ('CREATED','APPROVED_SPV','APPROVED_PIC') AND is_deleted = 0";
+        $stmt = db_query($this->conn, $sql);
+        $data['pending_approvals'] = ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) ? (int)$row['cnt'] : 0;
+
+        // ── CHART BREAKDOWNS (Jenis, Produk, Media, Kategori) ──
+        // Some fields (like produk/media) can contain multiple comma-separated values.
+        // We fetch the raw data for all unique active scripts and aggregate them in PHP.
+        $data['by_jenis'] = [];
+        $data['by_produk'] = [];
+        $data['by_media'] = [];
+        $data['by_kategori'] = [];
+
+        $sql = "SELECT DISTINCT sl.request_id, r.jenis, r.produk, r.media, r.kategori
+                FROM script_library sl 
+                JOIN script_request r ON r.id = sl.request_id
+                WHERE sl.is_active = 1 OR sl.is_active = 0"; // Include all for dashboard stats unless we only want active? The original query didn't filter active. Let's just fetch all like before.
+        $stmt = db_query($this->conn, $sql);
+        
+        if ($stmt) {
+            while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                // Helper to split and count
+                $processField = function($rawStr, &$targetArray) {
+                    if (empty(trim((string)$rawStr))) return;
+                    $items = array_map('trim', explode(',', $rawStr));
+                    foreach ($items as $item) {
+                        if ($item !== '') {
+                            if (!isset($targetArray[$item])) $targetArray[$item] = 0;
+                            $targetArray[$item]++;
+                        }
+                    }
+                };
+
+                $processField($row['jenis'] ?? '', $data['by_jenis']);
+                $processField($row['produk'] ?? '', $data['by_produk']);
+                $processField($row['media'] ?? '', $data['by_media']);
+                $processField($row['kategori'] ?? '', $data['by_kategori']);
+            }
+        }
+
+        // Sort them descending by count
+        arsort($data['by_jenis']);
+        arsort($data['by_produk']);
+        arsort($data['by_media']);
+        arsort($data['by_kategori']);
+
+        // ── CHART: MONTHLY TREND (last 6 months) ──
+        $data['monthly_trend'] = [];
+        $now = new \DateTime();
+        for ($i = 5; $i >= 0; $i--) {
+            $d = clone $now;
+            $d->modify("-$i months");
+            $m = $d->format('m');
+            $y = $d->format('Y');
+            $label = $d->format('M Y');
+            $sql = "SELECT COUNT(DISTINCT request_id) as cnt FROM script_library
+                    WHERE MONTH(created_at) = ? AND YEAR(created_at) = ?";
+            $stmt = db_query($this->conn, $sql, [(int)$m, (int)$y]);
+            $cnt = ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) ? (int)$row['cnt'] : 0;
+            $data['monthly_trend'][] = ['label' => $label, 'count' => $cnt];
+        }
+
+        // ── WIDGET: RECENTLY PUBLISHED (top 5) ──
+        $sql = "SELECT TOP 5 sl.request_id, r.script_number, r.jenis, r.produk, r.media,
+                        CONVERT(varchar, sl.created_at, 105) as pub_date
+                FROM script_library sl
+                JOIN script_request r ON r.id = sl.request_id
+                WHERE sl.is_active = 1
+                ORDER BY sl.created_at DESC";
+        $stmt = db_query($this->conn, $sql);
+        $data['recent_scripts'] = [];
+        if ($stmt) {
+            $seen = [];
+            while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $rid = $row['request_id'];
+                if (!isset($seen[$rid])) {
+                    $data['recent_scripts'][] = $row;
+                    $seen[$rid] = true;
+                }
+            }
+        }
+
+        // ── WIDGET: RECENT AUDIT ACTIVITY (top 5 non-admin actions) ──
+        $sql = "SELECT TOP 5 a.action, a.user_id, a.user_role, 
+                        CONVERT(varchar, a.created_at, 120) as ts,
+                        r.script_number, r.id as request_id
+                FROM script_audit_trail a
+                JOIN script_request r ON r.id = a.request_id
+                WHERE a.user_role != 'ADMIN'
+                ORDER BY a.created_at DESC";
+        $stmt = db_query($this->conn, $sql);
+        $data['recent_audit'] = [];
+        if ($stmt) {
+            while ($row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+                $data['recent_audit'][] = $row;
+            }
+        }
+
+        return $data;
+    }
 }
+

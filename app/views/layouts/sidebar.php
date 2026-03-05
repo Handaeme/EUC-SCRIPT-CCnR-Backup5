@@ -2,7 +2,7 @@
     <?php
     function isActive($c, $a = null) {
         $currC = $_GET['controller'] ?? 'dashboard';
-        $currA = $_GET['action'] ?? 'index';
+        $currA = $_GET['action'] ?? 'libraryDashboard';
         
         // Strict Comparison
         if ($c === $currC && ($a === null || $a === $currA)) {
@@ -56,6 +56,12 @@
             <h3>EUC Script CCnR</h3>
         </div>
         
+        <!-- Library Dashboard - Visible for All (Top Position) -->
+        <a href="?controller=dashboard&action=libraryDashboard" class="menu-item <?php echo isActive('dashboard', 'libraryDashboard'); ?>">
+            <i class="fi fi-rr-chart-histogram"></i>
+            Library Dashboard
+        </a>
+
         <?php if ($role === 'MAKER' || $role === 'Maker'): ?>
             <!-- MAKER: Create New Request first, then My Tasks -->
             <a href="?controller=request&action=create" class="menu-item <?php echo isActive('request', 'create'); ?>">
@@ -71,7 +77,18 @@
             </a>
         <?php elseif ($role !== 'VIEWER'): ?>
             <!-- Non-MAKER: Dashboard/Approval link -->
-            <a href="index.php" class="menu-item <?php echo isActive('dashboard', 'index'); ?>">
+            <?php
+                // Map role to its specific dashboard action
+                $roleActionMap = [
+                    'SPV' => 'spv',
+                    'PIC' => 'pic',
+                    'PROCEDURE' => 'procedure',
+                    'CPMS' => 'index',
+                    'ADMIN' => 'index',
+                ];
+                $dashAction = $roleActionMap[$role] ?? 'index';
+            ?>
+            <a href="?controller=dashboard&action=<?php echo $dashAction; ?>" class="menu-item <?php echo isActive('dashboard', $dashAction); ?>">
                 <i class="fi fi-rr-apps"></i>
                 <?php 
                     if (in_array($role, ['SPV', 'PIC', 'PROCEDURE'])) {
@@ -90,7 +107,7 @@
             <i class="fi fi-rr-layout-fluid"></i>
             Template
         </a>
-        
+
         <!-- Script Library - Visible for All -->
         <a href="?controller=dashboard&action=library" class="menu-item <?php echo isActive('dashboard', 'library'); ?>">
             <i class="fi fi-rr-book-alt"></i>
@@ -121,6 +138,12 @@
                 Backup & Restore
             </a>
 
+            <?php // [START UPDATE 04-Mar-2026] Legacy Script Importer ?>
+            <a href="?controller=legacyImport&action=index" class="menu-item <?php echo isActive('legacyImport'); ?>">
+                <i class="fi fi-rr-database"></i>
+                Legacy Import
+            </a>
+            <?php // [END UPDATE 04-Mar-2026] ?>
             <?php if ($originalRole === 'ADMIN'): ?>
             <a href="?controller=user&action=restoreRole" class="menu-item" style="color:#ef4444; background:#fef2f2; border:1px solid #fca5a5; margin:10px 15px; text-align:center; justify-content:center;">
                 <i class="fi fi-rr-undo" style="margin-right:5px;"></i>

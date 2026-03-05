@@ -1,16 +1,5 @@
 <?php
-/**
- * Reusable Pagination Bar
- * 
- * Required variables (set before including this file):
- *   $currentPage  - Current page number (int)
- *   $totalPages   - Total number of pages (int)
- *   $totalItems   - Total number of items (int)
- *   $perPage      - Items per page (int)
- * 
- * Optional:
- *   $_GET params are automatically preserved in links
- */
+
 
 if (!isset($currentPage) || !isset($totalPages) || !isset($totalItems) || !isset($perPage)) return;
 if ($totalPages <= 1 && $totalItems <= $perPage) {
@@ -18,6 +7,7 @@ if ($totalPages <= 1 && $totalItems <= $perPage) {
     if ($totalItems <= 0) return;
 }
 
+// [START UPDATE 28-Feb-2026] Feature: Standard Pagination UI Component
 // Build base URL preserving all current GET params except 'page'
 $_pgParams = $_GET;
 unset($_pgParams['page']);
@@ -91,3 +81,4 @@ $_ppOptions = [5, 10, 20, 30, 50];
         <?php endif; ?>
     </div>
 </div>
+<?php // [END UPDATE 28-Feb-2026] ?>

@@ -335,10 +335,11 @@ class AuditController extends Controller {
             $text = preg_replace('/<span[^>]*class="[^"]*revision-span[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $text);
             $text = preg_replace('/<span[^>]*style="[^"]*color:\s*red[^"]*"[^>]*>(.*?)<\/span>/is', '$1', $text);
             
-            // FIX: Protect user variables like <Nama>, <Alamat> from strip_tags
+            // [START UPDATE 28-Feb-2026] Fix: Protect user variables like <Nama>, <Alamat> from strip_tags
             $text = preg_replace_callback('/<([A-Za-z_][A-Za-z0-9_ ]*)>/', function($m) {
                 return '%%OPEN%%' . $m[1] . '%%CLOSE%%';
             }, $text);
+            // [END UPDATE 28-Feb-2026]
             
             // Convert block elements to newlines
             $text = preg_replace('/<br\s*\/?>/i', "\n", $text);

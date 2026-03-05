@@ -16,104 +16,43 @@ require_once __DIR__ . '/library_helpers.php';
             $libExportParams['action'] = 'exportLibrary';
             $libExportUrl = '?' . http_build_query($libExportParams);
         ?>
-        <a href="<?php echo htmlspecialchars($libExportUrl); ?>" 
-           style="background:#10b981; color:white; text-decoration:none; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; display:flex; align-items:center; gap:8px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">
-           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-           Export Excel
-        </a>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <?php // [START UPDATE 03-Mar-2026] Feature: Audit Package Export (Admin Only) ?>
+            <?php if (isset($_SESSION['user']) && ($_SESSION['user']['dept'] ?? '') === 'ADMIN'): ?>
+            <button type="button" onclick="openAuditExportModal()"
+               style="background:#7c3aed; color:white; text-decoration:none; padding:8px 16px; border:none; border-radius:8px; font-weight:bold; font-size:13px; display:flex; align-items:center; gap:8px; box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.2); cursor:pointer;"
+               title="Export Audit Package (ZIP) — Admin Only">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+               Export Audit ZIP
+            </button>
+            <?php endif; ?>
+            <?php // [END UPDATE 03-Mar-2026] ?>
+            <a href="<?php echo htmlspecialchars($libExportUrl); ?>" 
+               style="background:#10b981; color:white; text-decoration:none; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:13px; display:flex; align-items:center; gap:8px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+               Export Excel
+            </a>
+        </div>
     </div>
 
-    <!-- LIBRARY STATS CARDS -->
-    <?php 
-        $totalScripts = $totalItems ?? count($libraryItems);
-        
-        // Define Dynamic Filters to show as cards
-        $dynamicStats = [];
-        
-        // 1. Media Channel (Prioritized as requested)
-        if (!empty($_GET['media'])) {
-            $val = is_array($_GET['media']) ? implode(', ', $_GET['media']) : $_GET['media'];
-            $dynamicStats[] = [
-                'label' => 'Media Channel',
-                'value' => $val,
-                'color' => 'blue', // Theme color
-                'icon' => '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>'
-            ];
-        }
-        
-        // 2. Jenis
-        if (!empty($_GET['jenis'])) {
-            $val = is_array($_GET['jenis']) ? implode(', ', $_GET['jenis']) : $_GET['jenis'];
-            $dynamicStats[] = [
-                'label' => 'Jenis Script',
-                'value' => $val,
-                'color' => 'indigo',
-                'icon' => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>'
-            ];
-        }
-        
-        // 3. Produk
-        if (!empty($_GET['produk'])) {
-            $val = is_array($_GET['produk']) ? implode(', ', $_GET['produk']) : $_GET['produk'];
-            $dynamicStats[] = [
-                'label' => 'Produk',
-                'value' => $val,
-                'color' => 'emerald',
-                'icon' => '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line>'
-            ];
-        }
-        
-        // 4. Kategori
-        if (!empty($_GET['kategori'])) {
-            $val = is_array($_GET['kategori']) ? implode(', ', $_GET['kategori']) : $_GET['kategori'];
-            $dynamicStats[] = [
-                'label' => 'Kategori',
-                'value' => $val,
-                'color' => 'amber',
-                'icon' => '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>'
-            ];
-        }
-    ?>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:25px;">
-        <!-- Total Scripts Card (Always Visible) -->
-        <div class="card" style="padding:20px; display:flex; align-items:center; gap:15px; border-left:4px solid var(--primary-red);">
-            <div style="width:48px; height:48px; background:#fee2e2; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--primary-red);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+
+    <!-- KPI Indicator requested by User -->
+    <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+        <div style="padding: 12px 16px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; background: white; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 0 0 2px #ef4444; width: max-content;">
+            <div style="background: #fee2e2; padding: 6px; border-radius: 8px; color: #dc2626; display: flex; justify-content: center; align-items: center; width: 32px; height: 32px;">
+                <i class="fi fi-rr-document" style="font-size:18px; line-height: 0;"></i>
             </div>
             <div>
-                <div style="font-size:24px; font-weight:700; color:#1e293b;"><?php echo number_format($totalScripts); ?></div>
-                <div style="font-size:13px; color:#64748b;">Total Scripts</div>
+                <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Total Script</div>
+                <div style="font-size: 20px; font-weight: 700; color: #1e293b; line-height: 1; margin-top: 4px;"><?php echo number_format($totalItems ?? 0); ?></div>
             </div>
         </div>
         
-        <!-- Dynamic Filter Cards -->
-        <?php foreach($dynamicStats as $stat): 
-            // Color Mapping
-            $colors = [
-                'blue' => ['bg'=>'#eff6ff', 'text'=>'#3b82f6', 'border'=>'#3b82f6'],
-                'indigo' => ['bg'=>'#eef2ff', 'text'=>'#6366f1', 'border'=>'#6366f1'],
-                'emerald' => ['bg'=>'#ecfdf5', 'text'=>'#10b981', 'border'=>'#10b981'],
-                'amber' => ['bg'=>'#fffbeb', 'text'=>'#f59e0b', 'border'=>'#f59e0b'],
-            ];
-            $theme = $colors[$stat['color']] ?? $colors['blue'];
-        ?>
-        <div class="card" style="padding:20px; display:flex; align-items:center; gap:15px; border-left:4px solid <?php echo $theme['border']; ?>;">
-            <div style="width:48px; height:48px; background:<?php echo $theme['bg']; ?>; border-radius:12px; display:flex; align-items:center; justify-content:center; color:<?php echo $theme['text']; ?>;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><?php echo $stat['icon']; ?></svg>
-            </div>
-            <div style="min-width:0;"> <!-- min-width:0 required for flex child truncation -->
-                <div style="font-size:18px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="<?php echo htmlspecialchars($stat['value']); ?>">
-                    <?php echo htmlspecialchars($stat['value']); ?>
-                </div>
-                <div style="font-size:13px; color:#64748b; margin-top:4px; display:flex; align-items:center; gap:8px;">
-                    <?php echo htmlspecialchars($stat['label']); ?>
-                    <span style="background:<?php echo $theme['bg']; ?>; color:<?php echo $theme['text']; ?>; padding:4px 10px; border-radius:16px; font-size:14px; font-weight:700;">
-                        <?php echo number_format($totalScripts); ?>
-                    </span>
-                </div>
-            </div>
+        <?php if(isset($search) && trim($search) !== ''): ?>
+        <div style="font-size:13px; color:#64748b; background: white; padding: 10px 15px; border-radius: 8px; border: 1px dashed #cbd5e1; height: 100%; display: flex; align-items: center;">
+            Pencarian Aktif: <strong style="color:#0f172a; margin-left:5px;">"<?php echo htmlspecialchars($search); ?>"</strong>
         </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 
     <div class="card">
@@ -229,7 +168,7 @@ require_once __DIR__ . '/library_helpers.php';
                         </script>
                     </div>
                     <div style="display:flex; align-items:center;">
-                        <?php if(!empty($_GET['start_date']) || !empty($_GET['jenis']) || !empty($_GET['produk']) || !empty($_GET['kategori']) || !empty($_GET['media'])): ?>
+                        <?php if(!empty($_GET['status']) || !empty($_GET['start_date']) || !empty($_GET['jenis']) || !empty($_GET['produk']) || !empty($_GET['kategori']) || !empty($_GET['media'])): ?>
                             <a href="?controller=dashboard&action=library" style="margin-right:15px; color:#64748b; font-size:13px; text-decoration:none;">Reset All</a>
                         <?php endif; ?>
                         
@@ -259,6 +198,7 @@ require_once __DIR__ . '/library_helpers.php';
 
                     <?php 
                     $filterLabels = [
+                        'status' => 'Status',
                         'jenis' => 'Jenis', 
                         'produk' => 'Produk', 
                         'kategori' => 'Kategori', 
@@ -400,6 +340,8 @@ require_once __DIR__ . '/library_helpers.php';
 
             </form>
         </div>
+        
+
         
         <?php if (empty($libraryItems)): ?>
             <div style="text-align:center; padding:30px; color:#888;">
@@ -776,5 +718,132 @@ function sortLibraryByDate(columnIndex) {
     }
 }
 </script>
+
+<?php // [START UPDATE 03-Mar-2026] Feature: Audit Export Modal (Admin Only) ?>
+<?php if (isset($_SESSION['user']) && ($_SESSION['user']['dept'] ?? '') === 'ADMIN'): ?>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  AUDIT EXPORT MODAL (Admin Only)                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="auditExportOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; justify-content:center; align-items:center; animation:fadeIn 0.2s;">
+    <div style="background:white; border-radius:16px; padding:30px 35px; width:520px; max-width:92%; box-shadow:0 20px 60px rgba(0,0,0,0.3); max-height:85vh; overflow-y:auto;" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+            <div style="width:44px; height:44px; background:#f5f3ff; border-radius:12px; display:flex; align-items:center; justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+            </div>
+            <div>
+                <h3 style="margin:0; font-size:18px; color:#1e293b; font-weight:700;">Export Audit Package</h3>
+                <p style="margin:2px 0 0 0; font-size:12px; color:#94a3b8;">Pilih kriteria data yang ingin diekspor ke file ZIP</p>
+            </div>
+        </div>
+
+        <form id="auditExportForm" method="GET" action="">
+            <input type="hidden" name="controller" value="auditExport">
+            <input type="hidden" name="action" value="export">
+
+            <!-- Date Range -->
+            <div style="margin-bottom:16px;">
+                <label style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:6px;">Rentang Tanggal (Date Range)</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="date" name="start_date" id="auditStartDate" style="flex:1; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; color:#334155; outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#cbd5e1'">
+                    <span style="align-self:center; color:#94a3b8; font-size:13px;">s.d.</span>
+                    <input type="date" name="end_date" id="auditEndDate" style="flex:1; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; color:#334155; outline:none;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#cbd5e1'">
+                </div>
+            </div>
+
+            <!-- Filter Grid -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:18px;">
+                <?php
+                $auditFilterLabels = [
+                    'jenis'    => 'Jenis Script',
+                    'produk'   => 'Produk',
+                    'kategori' => 'Kategori',
+                    'media'    => 'Media Channel',
+                ];
+                foreach ($auditFilterLabels as $fKey => $fLabel):
+                    $fOptions = $filterOptions[$fKey] ?? [];
+                ?>
+                <div>
+                    <label style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:6px;"><?php echo $fLabel; ?></label>
+                    <select name="<?php echo $fKey; ?>" style="width:100%; padding:9px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; color:#334155; background:white; outline:none; cursor:pointer;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#cbd5e1'">
+                        <option value="">— Semua —</option>
+                        <?php foreach($fOptions as $opt): ?>
+                        <option value="<?php echo htmlspecialchars($opt); ?>"><?php echo htmlspecialchars($opt); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Info Box -->
+            <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:12px 14px; margin-bottom:20px; display:flex; align-items:flex-start; gap:10px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <div style="font-size:12px; color:#5b21b6; line-height:1.5;">
+                    <strong>Isi Paket ZIP:</strong> Info Script, Audit Trail (CSV), Konten Naskah (HTML), File Asli (.xlsx/.docx), dan Bukti Dokumen (Legal/CX/LPP).
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" onclick="closeAuditExportModal()"
+                        style="background:#f1f5f9; color:#64748b; border:none; padding:10px 22px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer;"
+                        onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                    Batal
+                </button>
+                <button type="submit" id="auditExportSubmitBtn"
+                        style="background:#7c3aed; color:white; border:none; padding:10px 22px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:8px;"
+                        onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download ZIP
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAuditExportModal() {
+    const overlay = document.getElementById('auditExportOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+function closeAuditExportModal() {
+    const overlay = document.getElementById('auditExportOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+// Close on clicking outside the modal box
+document.getElementById('auditExportOverlay')?.addEventListener('click', function(e) {
+    if (e.target === this) closeAuditExportModal();
+});
+
+// Show loading state on form submit
+document.getElementById('auditExportForm')?.addEventListener('submit', function() {
+    const btn = document.getElementById('auditExportSubmitBtn');
+    if (btn) {
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Mengekspor...';
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+    }
+    // Re-enable after 30 seconds (fallback in case download completes silently)
+    setTimeout(function() {
+        if (btn) {
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download ZIP';
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+        closeAuditExportModal();
+    }, 30000);
+});
+</script>
+<style>
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+<?php endif; ?>
+<?php // [END UPDATE 03-Mar-2026] ?>
 
 <?php require_once 'app/views/layouts/footer.php'; ?>

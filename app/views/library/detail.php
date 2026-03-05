@@ -5,7 +5,7 @@ require_once 'app/views/layouts/sidebar.php';
 $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
 ?>
 
-<style>
+<style>`
 /* Excel Sheet Tabs CSS */
 .sheet-tabs-nav {
     display: flex;
@@ -47,7 +47,9 @@ $isFileUpload = ($request['mode'] === 'FILE_UPLOAD');
 
 /* IMPORTANT: Allow tab buttons to be clickable */
 .library-content-readonly .btn-sheet,
-.library-content-readonly .btn-media-tab {
+.library-content-readonly .btn-sheet-tab,
+.library-content-readonly .btn-media-tab,
+.library-content-readonly [contenteditable="false"] {
     pointer-events: auto !important;
     cursor: pointer !important;
 }
@@ -127,7 +129,7 @@ function switchMediaTab(idx) {
 }
 
 // Helper function to get clean DOM (unwraps revisions/red text to plain text)
-function getCleanDOM(element) {
+function getCleanDOM(element) {`
     const clonedElement = element.cloneNode(true);
     // Unwrap spans to keep text without formatting/color
     clonedElement.querySelectorAll('.revision-span, .inline-comment, span[style*="color: red"], span[style*="color:red"]').forEach(el => {

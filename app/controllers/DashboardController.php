@@ -252,6 +252,7 @@ class DashboardController extends Controller {
     public function library() {
         $reqModel = $this->model('RequestModel');
         
+        // [START UPDATE 28-Feb-2026] Feature: Added Library Pagination & Advanced Filters with Date Type options
         $startDate = $_GET['start_date'] ?? null;
         $endDate = $_GET['end_date'] ?? null;
         $dateType = $_GET['date_type'] ?? 'created_at'; // Filter by Published or Start Date
@@ -259,12 +260,16 @@ class DashboardController extends Controller {
         
         // Advanced Filters
         $filters = [];
-        $filterCols = ['jenis', 'produk', 'kategori', 'media'];
+        $filterCols = ['status', 'jenis', 'produk', 'kategori', 'media'];
         $filterOptions = [];
         
         foreach ($filterCols as $col) {
             // Fetch availble options
-            $filterOptions[$col] = $reqModel->getDistinctLibraryValues($col);
+            if ($col === 'status') {
+                $filterOptions['status'] = ['Active', 'Inactive'];
+            } else {
+                $filterOptions[$col] = $reqModel->getDistinctLibraryValues($col);
+            }
             
             // Capture selected filters (expecting arrays from checkboxes)
             if (isset($_GET[$col]) && is_array($_GET[$col])) {
@@ -285,6 +290,7 @@ class DashboardController extends Controller {
 
         // NEW: Search Parameter
         $search = $_GET['search'] ?? null;
+        // [END UPDATE 28-Feb-2026]
         
         // VISIBILITY LOGIC:
         // Agents (ROLE 'USER' or similar?) -> Show ONLY Active
@@ -298,6 +304,7 @@ class DashboardController extends Controller {
         // Use the aggregated fetcher (same as Export) to handle Duplicates & Content formatting consistently
         $allLibraryItems = $reqModel->getLibraryItemsWithContent($startDate, $endDate, $sortPublished, $filters, $showInactive, $sortBy, $dateType, $search);
         
+        // [START UPDATE 28-Feb-2026] Feature: Page Clamping and Array Slicing for Pagination
         // === PAGINATION LOGIC ===
         $perPage = intval($_GET['per_page'] ?? 10);
         if (!in_array($perPage, [5, 10, 20, 30, 50])) $perPage = 10;
@@ -311,6 +318,7 @@ class DashboardController extends Controller {
         // Slice array for current page
         $offset = ($page - 1) * $perPage;
         $libraryItems = array_slice($allLibraryItems, $offset, $perPage);
+        // [END UPDATE 28-Feb-2026]
         
         // AJAX Handler for Live Search
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
@@ -342,6 +350,9 @@ class DashboardController extends Controller {
         
         $sqlServerToday = $reqModel->getSqlServerTodayDate();
 
+        // Library Statistics for Dashboard Ribbon
+        $libraryStats = $reqModel->getLibraryStatistics();
+
         $this->view('dashboard/library', [
             'libraryItems' => $libraryItems,
             'startDate' => $startDate,
@@ -357,7 +368,8 @@ class DashboardController extends Controller {
             'totalItems' => $totalItems,
             'perPage' => $perPage,
             'search' => $search,
-            'sqlServerToday' => $sqlServerToday
+            'sqlServerToday' => $sqlServerToday,
+            'libraryStats' => $libraryStats
         ]);
     }
     
@@ -609,5 +621,15 @@ class DashboardController extends Controller {
         'message' => $success ? 'Status updated' : 'Failed to update status',
         'new_state' => $isActive
     ]);
+    }
+
+    public function libraryDashboard() {
+        if (!isset($_SESSION['user'])) {
+            header("Location: index.php");
+            exit;
+        }
+        $reqModel = $this->model('RequestModel');
+        $dashStats = $reqModel->getLibraryDashboardStats();
+        $this->view('dashboard/library_dashboard', ['dashStats' => $dashStats]);
     }
 }

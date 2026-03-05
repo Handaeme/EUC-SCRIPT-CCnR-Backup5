@@ -960,6 +960,17 @@ class RequestController extends Controller {
             $scriptNumber = $reqResult['number'];
             $ticketId = $reqResult['ticket_id'] ?? $scriptNumber;
 
+            // Move temporarily uploaded file to ticket folder
+            if (isset($input['filepath']) && file_exists($input['filepath'])) {
+                $ticketDir = dirname(__DIR__, 2) . '/storage/uploads/' . $scriptNumber . '/';
+                if (!is_dir($ticketDir)) mkdir($ticketDir, 0777, true);
+                
+                $newPath = $ticketDir . $input['filename'];
+                if (rename($input['filepath'], $newPath)) {
+                    $input['filepath'] = $newPath; // Update path for DB saving
+                }
+            }
+
             // 2. Save Preview Content
             // Logic: Content might be a single string (from File Upload) or an Object/Array (from Free Input Tabs)
             
@@ -1182,10 +1193,16 @@ class RequestController extends Controller {
         // 2. Handle File Upload if present in update
         if (isset($_FILES['script_file'])) {
              $file = $_FILES['script_file'];
+             
+             // Get Script Number for folder naming
+             $req = $reqModel->getRequestById($id);
+             $scriptNumber = $req['script_number'] ?? 'UNKNOWN';
+             
              $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
              // FIX: Use Absolute Path to ensure we stay inside project root
-             $targetDir = dirname(__DIR__, 2) . '/storage/uploads/';
+             $targetDir = dirname(__DIR__, 2) . '/storage/uploads/' . $scriptNumber . '/';
              if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+             
              $filename = uniqid() . '_' . basename($file['name']);
              $targetPath = $targetDir . $filename;
              if (move_uploaded_file($file['tmp_name'], $targetPath)) {
@@ -1299,8 +1316,9 @@ class RequestController extends Controller {
             // Final Filename
             $filename = "{$safeType}_{$year}_{$formattedTicket}_{$safeOriginal}.{$ext}";
             
-            // Create upload directory (ABSOLUTE PATH SECURE)
-            $uploadDir = dirname(__DIR__, 2) . '/storage/uploads/review_docs/';
+            // Create upload directory (ABSOLUTE PATH SECURE) grouped by Script Number
+            $scriptNumberForFolder = $request['script_number'] ?? $formattedTicket;
+            $uploadDir = dirname(__DIR__, 2) . '/storage/uploads/' . $scriptNumberForFolder . '/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
             }

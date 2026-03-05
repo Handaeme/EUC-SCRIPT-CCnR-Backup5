@@ -249,6 +249,7 @@ function log_message($message) {
 }
 
 // --- SSO SESSION MAPPING ---
+// [START UPDATE 28-Feb-2026] Feature: Automap LDAP job_function and dept into App Roles
 // If SSO is active, the main portal stores data in the root of $_SESSION (e.g., $_SESSION['USERID'])
 // EUC-Script expects this data to be inside $_SESSION['user']. We map it here automatically.
 if ($USE_PORTAL_SSO && isset($_SESSION['USERID']) && !empty($_SESSION['USERID']) && !isset($_SESSION['user']['userid'])) {
@@ -293,12 +294,13 @@ if ($USE_PORTAL_SSO && isset($_SESSION['USERID']) && !empty($_SESSION['USERID'])
         'ldap' => 1 // Assume LDAP if coming from main portal
     ];
 }
+// [END UPDATE 28-Feb-2026]
 
 
 // --- FALLBACK DASHBOARD (Role Based) ---
 if (isset($_SESSION['user']) && isset($_SESSION['user']['dept'])) {
   $dashboard = new App\Controllers\DashboardController();
-  $dashboard->index();
+  $dashboard->libraryDashboard();
 } else {
   // JIKA BELUM LOGIN:
   if ($USE_PORTAL_SSO) {

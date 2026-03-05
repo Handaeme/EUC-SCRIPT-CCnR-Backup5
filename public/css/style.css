@@ -122,7 +122,8 @@ body.sidebar-collapsed .header {
     gap: 10px;
     width: 100%; /* Explicitly force full width */
     box-sizing: border-box; /* Include padding in width */
-    padding: 8px 24px; /* Reduced vertical padding (Thinner) */
+    padding: 12px 24px; /* Increased padding for better touch target and spacing */
+    margin-bottom: 4px; /* Added spacing between menu items */
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.9rem; /* Slightly smaller font */
