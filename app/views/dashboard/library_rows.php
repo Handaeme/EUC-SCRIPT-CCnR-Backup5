@@ -24,11 +24,13 @@
            $isSched = false;
            if ($isActive && !empty($item['start_date'])) {
                $todayVal = $sqlServerToday ?? 'today';
-               $td = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime($todayVal);
+               
+               // Handle object or string correctly. 'today_date' from DB comes as string or DateTime
+               $td = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime(is_string($todayVal) ? $todayVal : 'today');
                $td->setTime(0,0,0);
                
                $dbDate = $item['start_date'];
-               $st = ($dbDate instanceof DateTime) ? clone $dbDate : new DateTime($dbDate);
+               $st = ($dbDate instanceof DateTime) ? clone $dbDate : new DateTime(is_string($dbDate) ? $dbDate : 'today');
                $st->setTime(0,0,0);
                
                if ($st > $td) $isSched = true;

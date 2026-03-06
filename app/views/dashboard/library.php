@@ -599,8 +599,6 @@ function showLibNotification(message, isSuccess) {
 }
 
 function performLibToggle(requestId, activate) {
-    closeLibToggleModal();
-    
     let startDate = null;
     if (activate) {
         const dateInput = document.getElementById('lib-activate-date');
@@ -612,6 +610,9 @@ function performLibToggle(requestId, activate) {
         }
         startDate = dateInput ? dateInput.value : null;
     }
+    
+    // Close modal only after extracting the value
+    closeLibToggleModal();
     
     fetch('?controller=dashboard&action=activateScript', {
         method: 'POST',

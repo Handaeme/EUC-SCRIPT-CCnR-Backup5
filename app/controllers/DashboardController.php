@@ -320,6 +320,9 @@ class DashboardController extends Controller {
         $libraryItems = array_slice($allLibraryItems, $offset, $perPage);
         // [END UPDATE 28-Feb-2026]
         
+        // [FIX] Get SQL Server date BEFORE AJAX handler so it's available in library_rows.php
+        $sqlServerToday = $reqModel->getSqlServerTodayDate();
+        
         // AJAX Handler for Live Search
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             header('Content-Type: application/json');
@@ -347,8 +350,6 @@ class DashboardController extends Controller {
             ]);
             exit;
         }
-        
-        $sqlServerToday = $reqModel->getSqlServerTodayDate();
 
         // Library Statistics for Dashboard Ribbon
         $libraryStats = $reqModel->getLibraryStatistics();

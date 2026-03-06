@@ -327,10 +327,10 @@ function downloadContentAsExcel() {
                             $isScheduled = false;
                             if ($isActive && !empty($startDate)) {
                                 $todayVal = $sqlServerToday ?? 'today';
-                                $todayDate = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime($todayVal);
+                                $todayDate = ($todayVal instanceof DateTime) ? clone $todayVal : new DateTime(is_string($todayVal) ? $todayVal : 'today');
                                 $todayDate->setTime(0, 0, 0);
                                 
-                                $startDt = ($startDate instanceof DateTime) ? clone $startDate : new DateTime($startDate);
+                                $startDt = ($startDate instanceof DateTime) ? clone $startDate : new DateTime(is_string($startDate) ? $startDate : 'today');
                                 $startDt->setTime(0, 0, 0);
                                 if ($startDt > $todayDate) {
                                     $isScheduled = true;
@@ -352,6 +352,11 @@ function downloadContentAsExcel() {
                             }
                         }
                     ?>
+                    <?php if (isset($isActive)): ?>
+                        <span style="font-size:11px; padding:3px 8px; border-radius:12px; font-weight:700; border:1px solid currentColor; <?php echo $badgeStyle; ?> display:inline-flex; align-items:center;">
+                            <?php echo $badgeIcon . $badgeText; ?>
+                        </span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

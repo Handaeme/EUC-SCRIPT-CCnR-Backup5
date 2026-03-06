@@ -1003,3 +1003,6 @@
 [2026-03-06 10:32:51] Attempted login for user: admin
 [2026-03-06 10:32:51] Local login successful for user: admin
 [2026-03-06 10:32:51] Redirecting admin to index.php
+[2026-03-06 11:08:57] Attempted login for user: maker01
+[2026-03-06 11:08:57] Local login successful for user: maker01
+[2026-03-06 11:08:57] Redirecting maker01 to index.php
