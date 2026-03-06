@@ -980,3 +980,26 @@
 [2026-03-05 11:39:45] Attempted login for user: HS1234X
 [2026-03-05 11:39:45] Local login successful for user: HS1234X
 [2026-03-05 11:39:45] Redirecting HS1234X to index.php
+[2026-03-05 16:00:02] Attempted login for user: admin
+[2026-03-05 16:00:02] Local login successful for user: admin
+[2026-03-05 16:00:02] Redirecting admin to index.php
+[2026-03-06 08:29:53] Attempted login for user: maker01
+[2026-03-06 08:29:53] Local login successful for user: maker01
+[2026-03-06 08:29:53] Redirecting maker01 to index.php
+[2026-03-06 09:26:39] Attempted login for user: maker01
+[2026-03-06 09:26:39] Local login successful for user: maker01
+[2026-03-06 09:26:39] Redirecting maker01 to index.php
+[2026-03-06 09:27:38] Attempted login for user: HS1234X
+[2026-03-06 09:27:38] Local login successful for user: HS1234X
+[2026-03-06 09:27:38] Redirecting HS1234X to index.php
+[2026-03-06 09:28:43] Attempted login for user: pic01
+[2026-03-06 09:28:43] Local login successful for user: pic01
+[2026-03-06 09:28:43] Redirecting pic01 to index.php
+[2026-03-06 09:29:24] Attempted login for user: proc01
+[2026-03-06 09:29:24] Local login successful for user: proc01
+[2026-03-06 09:29:24] Redirecting proc01 to index.php
+[2026-03-06 10:32:47] Attempted login for user: admin
+[2026-03-06 10:32:47] Local login failed for user: admin
+[2026-03-06 10:32:51] Attempted login for user: admin
+[2026-03-06 10:32:51] Local login successful for user: admin
+[2026-03-06 10:32:51] Redirecting admin to index.php

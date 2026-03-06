@@ -128,8 +128,8 @@ function switchMediaTab(idx) {
     }
 }
 
-// Helper function to get clean DOM (unwraps revisions/red text to plain text)
-function getCleanDOM(element) {`
+
+function getCleanDOM(element) {
     const clonedElement = element.cloneNode(true);
     // Unwrap spans to keep text without formatting/color
     clonedElement.querySelectorAll('.revision-span, .inline-comment, span[style*="color: red"], span[style*="color:red"]').forEach(el => {

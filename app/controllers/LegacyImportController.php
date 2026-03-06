@@ -40,11 +40,11 @@ class LegacyImportController extends Controller {
         fwrite($out, "\xEF\xBB\xBF");
 
         // Header row
-        fputcsv($out, ['No_Tiket (Kosongkan utk Auto)', 'Judul_Script', 'Jenis', 'Produk', 'Kategori', 'Media', 'Tgl_Dibuat', 'Nama_File']);
+        fputcsv($out, ['No_Tiket (Kosongkan utk Auto)', 'Judul_Script', 'Jenis', 'Produk', 'Kategori', 'Media', 'Tgl_Dibuat', 'Nama_File', 'File_Legal (Opsional)', 'File_CX (Opsional)', 'File_Syariah (Opsional)', 'File_LPP (Opsional)']);
 
         // Example rows
-        fputcsv($out, ['LGCY-001', 'Script Tagihan Past Due', 'Konvensional', 'Kartu Kredit', 'Past Due', 'WhatsApp', '2023-05-10', 'Script_CC_PastDue.xlsx']);
-        fputcsv($out, ['LGCY-002', 'Script KPR Syariah Promo', 'Syariah', 'KPR Syariah', 'Promo', 'Email', '2024-01-15', 'Script_KPR_Promo.docx']);
+        fputcsv($out, ['LGCY-001', 'Script Tagihan Past Due', 'Konvensional', 'Kartu Kredit', 'Past Due', 'WhatsApp', '2023-05-10', 'Script_CC_PastDue.xlsx', 'Legal_CC.pdf', '', '', '']);
+        fputcsv($out, ['LGCY-002', 'Script KPR Syariah Promo', 'Syariah', 'KPR Syariah', 'Promo', 'Email', '2024-01-15', 'Script_KPR_Promo.docx', '', 'CX_KPR.pdf', 'Syariah_KPR.pdf', 'LPP_KPR.pdf']);
 
         fclose($out);
         exit;
@@ -128,6 +128,11 @@ class LegacyImportController extends Controller {
                 $media     = trim($line[5] ?? '');
                 $tglDibuat = trim($line[6] ?? '');
                 $namaFile  = trim($line[7] ?? '');
+                // Review doc columns (optional)
+                $fileLegal   = trim($line[8] ?? '');
+                $fileCx      = trim($line[9] ?? '');
+                $fileSyariah = trim($line[10] ?? '');
+                $fileLpp     = trim($line[11] ?? '');
 
                 // Skip completely empty rows
                 if (empty($ticket) && empty($title) && empty($namaFile)) continue;
@@ -146,6 +151,21 @@ class LegacyImportController extends Controller {
                 $fileFound = isset($zipContents[$namaFile]);
                 if (!$fileFound && empty($rowErrors)) {
                     $rowErrors[] = "File '$namaFile' tidak ditemukan di ZIP";
+                }
+
+                // Validate review doc files exist in ZIP (optional, warn only)
+                $reviewDocFiles = [
+                    'legal' => $fileLegal, 'cx' => $fileCx,
+                    'syariah' => $fileSyariah, 'lpp' => $fileLpp
+                ];
+                $reviewDocFound = [];
+                foreach ($reviewDocFiles as $docKey => $docFile) {
+                    if (!empty($docFile)) {
+                        $reviewDocFound[$docKey] = isset($zipContents[$docFile]);
+                        if (!$reviewDocFound[$docKey]) {
+                            $rowErrors[] = "File " . strtoupper($docKey) . " '$docFile' tidak ditemukan di ZIP";
+                        }
+                    }
                 }
 
                 // Parse date
@@ -167,6 +187,11 @@ class LegacyImportController extends Controller {
                     'tgl_dibuat' => $parsedDate ?? date('Y-m-d'),
                     'nama_file'  => $namaFile,
                     'file_found' => $fileFound,
+                    'file_legal'   => $fileLegal,
+                    'file_cx'      => $fileCx,
+                    'file_syariah' => $fileSyariah,
+                    'file_lpp'     => $fileLpp,
+                    'review_doc_found' => $reviewDocFound,
                     'errors'     => $rowErrors,
                     'status'     => empty($rowErrors) ? 'ready' : 'error',
                 ];
@@ -453,7 +478,30 @@ class LegacyImportController extends Controller {
                 // ── 4. Insert into script_files ────────────────
                 $reqModel->saveFileInfo($requestId, 'TEMPLATE', $namaFile, $relativePath, $userId);
 
-                // ── 5. Insert audit trail ──────────────────────
+                // ── 5. Insert review doc files (optional) ──────
+                $reviewDocMap = [
+                    'file_legal'   => 'LEGAL',
+                    'file_cx'      => 'CX',
+                    'file_syariah' => 'LEGAL_SYARIAH',
+                    'file_lpp'     => 'LPP',
+                ];
+                foreach ($reviewDocMap as $rowKey => $dbType) {
+                    $docFileName = trim($row[$rowKey] ?? '');
+                    if (empty($docFileName)) continue;
+
+                    $docZipPath = $zipContents[$docFileName] ?? null;
+                    if ($docZipPath) {
+                        $docDest = $scriptFolder . $docFileName;
+                        $docData = $zip->getFromName($docZipPath);
+                        if ($docData !== false) {
+                            file_put_contents($docDest, $docData);
+                        }
+                        $docRelPath = 'storage/uploads/' . $safeTicket . '/' . $docFileName;
+                        $reqModel->saveFileInfo($requestId, $dbType, $docFileName, $docRelPath, $userId);
+                    }
+                }
+
+                // ── 6. Insert audit trail ──────────────────────
                 $reqModel->logAudit(
                     $requestId, $scriptNumber,
                     'LEGACY_IMPORT',
@@ -504,11 +552,11 @@ class LegacyImportController extends Controller {
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
 
-        fputcsv($out, ['No_Tiket (Kosongkan utk Auto)', 'Judul_Script', 'Jenis', 'Produk', 'Kategori', 'Media', 'Tgl_Dibuat', 'Isi_Teks_Script']);
+        fputcsv($out, ['No_Tiket (Kosongkan utk Auto)', 'Judul_Script', 'Jenis', 'Produk', 'Kategori', 'Media', 'Tgl_Dibuat', 'Isi_Teks_Script', 'File_Legal (Opsional)', 'File_CX (Opsional)', 'File_Syariah (Opsional)', 'File_LPP (Opsional)']);
 
         // Example rows
-        fputcsv($out, ['', 'Script Tagihan Past Due', 'Konvensional', 'Kartu Kredit', 'Past Due', 'WhatsApp', '2023-05-10', 'Selamat pagi Bapak/Ibu, kami dari bagian penagihan ingin menginformasikan bahwa tagihan Anda sudah jatuh tempo. Mohon segera melakukan pembayaran.']);
-        fputcsv($out, ['', 'Script Promo KPR Syariah', 'Syariah', 'KPR Syariah', 'Promo', 'Email', '2024-01-15', 'Yth Nasabah, nikmati promo spesial KPR Syariah dengan margin kompetitif. Hubungi cabang terdekat untuk informasi lebih lanjut.']);
+        fputcsv($out, ['', 'Script Tagihan Past Due', 'Konvensional', 'Kartu Kredit', 'Past Due', 'WhatsApp', '2023-05-10', 'Selamat pagi Bapak/Ibu, kami dari bagian penagihan ingin menginformasikan bahwa tagihan Anda sudah jatuh tempo. Mohon segera melakukan pembayaran.', 'Legal_CC.pdf', '', '', '']);
+        fputcsv($out, ['', 'Script Promo KPR Syariah', 'Syariah', 'KPR Syariah', 'Promo', 'Email', '2024-01-15', 'Yth Nasabah, nikmati promo spesial KPR Syariah dengan margin kompetitif. Hubungi cabang terdekat untuk informasi lebih lanjut.', '', '', 'Syariah_KPR.pdf', '']);
 
         fclose($out);
         exit;
@@ -522,11 +570,31 @@ class LegacyImportController extends Controller {
 
         $errors = [];
         $rows   = [];
+        $zipContents = [];
 
         if (empty($_FILES['text_csv_file']['tmp_name'])) {
             $errors[] = 'File CSV Template Teks wajib diupload.';
             $this->view('admin/legacy_import', ['step' => 'upload', 'errors' => $errors]);
             return;
+        }
+
+        // ── Read ZIP if provided (for review doc attachments) ──
+        $hasZip = !empty($_FILES['text_zip_file']['tmp_name']);
+        if ($hasZip) {
+            $zipPath = $_FILES['text_zip_file']['tmp_name'];
+            $zip = new \ZipArchive();
+            if ($zip->open($zipPath) === true) {
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $name = $zip->getNameIndex($i);
+                    if (substr($name, -1) === '/' || strpos($name, '__MACOSX') !== false) continue;
+                    $zipContents[basename($name)] = $name;
+                }
+                $zip->close();
+            } else {
+                $errors[] = 'Gagal membuka file ZIP. Pastikan format valid.';
+                $this->view('admin/legacy_import', ['step' => 'upload', 'errors' => $errors]);
+                return;
+            }
         }
 
         $csvPath = $_FILES['text_csv_file']['tmp_name'];
@@ -552,22 +620,16 @@ class LegacyImportController extends Controller {
             fclose($handle);
 
             // ── Orphan Line Repair Engine ─────────────────────
-            // If a line has < 8 columns, it's probably a "broken" line
-            // caused by user pressing Enter instead of Alt+Enter.
-            // We merge it back into the previous row's last column.
             $mergedLines = [];
             foreach ($rawLines as $line) {
                 if (count($line) >= 8) {
-                    // Normal row
                     $mergedLines[] = $line;
                 } elseif (!empty($mergedLines)) {
-                    // Orphan row — merge into previous row's last column (Isi_Teks_Script)
                     $lastIdx = count($mergedLines) - 1;
-                    $lastCol = count($mergedLines[$lastIdx]) - 1;
+                    // Merge into column 7 (Isi_Teks_Script), not the last column
                     $orphanText = implode(' ', array_map('trim', $line));
-                    $mergedLines[$lastIdx][$lastCol] .= "\n" . $orphanText;
+                    $mergedLines[$lastIdx][7] = ($mergedLines[$lastIdx][7] ?? '') . "\n" . $orphanText;
                 }
-                // If first line is orphan (no previous row), skip it
             }
 
             $r = 1;
@@ -582,6 +644,11 @@ class LegacyImportController extends Controller {
                 $media     = trim($line[5] ?? '');
                 $tglDibuat = trim($line[6] ?? '');
                 $isiTeks   = trim($line[7] ?? '');
+                // Review doc columns (optional)
+                $fileLegal   = trim($line[8] ?? '');
+                $fileCx      = trim($line[9] ?? '');
+                $fileSyariah = trim($line[10] ?? '');
+                $fileLpp     = trim($line[11] ?? '');
 
                 if (empty($title) && empty($isiTeks)) continue;
 
@@ -592,6 +659,27 @@ class LegacyImportController extends Controller {
 
                 if (!empty($jenis) && !in_array($jenis, ['Konvensional', 'Syariah'])) {
                     $rowErrors[] = "Jenis harus 'Konvensional' atau 'Syariah'";
+                }
+
+                // Validate review doc files
+                $reviewDocFiles = [
+                    'legal' => $fileLegal, 'cx' => $fileCx,
+                    'syariah' => $fileSyariah, 'lpp' => $fileLpp
+                ];
+                $hasAnyDoc = !empty($fileLegal) || !empty($fileCx) || !empty($fileSyariah) || !empty($fileLpp);
+                $reviewDocFound = [];
+
+                if ($hasAnyDoc && !$hasZip) {
+                    $rowErrors[] = 'Kolom file review diisi tapi tidak ada file ZIP yang diupload';
+                } elseif ($hasAnyDoc && $hasZip) {
+                    foreach ($reviewDocFiles as $docKey => $docFile) {
+                        if (!empty($docFile)) {
+                            $reviewDocFound[$docKey] = isset($zipContents[$docFile]);
+                            if (!$reviewDocFound[$docKey]) {
+                                $rowErrors[] = "File " . strtoupper($docKey) . " '$docFile' tidak ditemukan di ZIP";
+                            }
+                        }
+                    }
                 }
 
                 $parsedDate = null;
@@ -618,6 +706,11 @@ class LegacyImportController extends Controller {
                     'tgl_dibuat'      => $parsedDate ?? date('Y-m-d'),
                     'isi_teks'        => $isiTeks,
                     'content_preview' => $contentPreview,
+                    'file_legal'      => $fileLegal,
+                    'file_cx'         => $fileCx,
+                    'file_syariah'    => $fileSyariah,
+                    'file_lpp'        => $fileLpp,
+                    'review_doc_found' => $reviewDocFound,
                     'errors'          => $rowErrors,
                     'status'          => empty($rowErrors) ? 'ready' : 'error',
                 ];
@@ -634,9 +727,19 @@ class LegacyImportController extends Controller {
             return;
         }
 
+        // ── Save temp ZIP for execute step ──────────────────────
+        $tempZipPath = null;
+        if ($hasZip) {
+            $tempDir = dirname(__DIR__, 2) . '/storage/temp_zips/';
+            if (!is_dir($tempDir)) mkdir($tempDir, 0777, true);
+            $tempZipPath = $tempDir . 'text_import_' . time() . '.zip';
+            move_uploaded_file($_FILES['text_zip_file']['tmp_name'], $tempZipPath);
+        }
+
         // Save to session
         $_SESSION['legacy_import_text'] = [
-            'rows' => $rows,
+            'rows'     => $rows,
+            'zip_path' => $tempZipPath,
         ];
 
         $hasErrors = !empty(array_filter($rows, fn($r) => $r['status'] === 'error'));
@@ -668,8 +771,10 @@ class LegacyImportController extends Controller {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        $rows = $_SESSION['legacy_import_text']['rows'];
-        $readyRows = array_filter($rows, fn($r) => $r['status'] === 'ready');
+        $importData  = $_SESSION['legacy_import_text'];
+        $rows        = $importData['rows'];
+        $zipPath     = $importData['zip_path'] ?? null;
+        $readyRows   = array_filter($rows, fn($r) => $r['status'] === 'ready');
 
         if (empty($readyRows)) {
             $this->view('admin/legacy_import', [
@@ -679,10 +784,28 @@ class LegacyImportController extends Controller {
             return;
         }
 
+        // ── Open ZIP if available (for review doc files) ───────
+        $zip = null;
+        $zipContents = [];
+        if ($zipPath && file_exists($zipPath)) {
+            $zip = new \ZipArchive();
+            if ($zip->open($zipPath) === true) {
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $name = $zip->getNameIndex($i);
+                    if (substr($name, -1) === '/' || strpos($name, '__MACOSX') !== false) continue;
+                    $zipContents[basename($name)] = $name;
+                }
+            } else {
+                $zip = null;
+            }
+        }
+
         $reqModel = $this->model('RequestModel');
         $config = require dirname(__DIR__, 2) . '/config/database.php';
         $conn = db_connect($config['host'], ['Database' => $config['dbname'], 'UID' => $config['user'], 'PWD' => $config['pass']]);
         $userId = $_SESSION['user']['userid'] ?? 'ADMIN_MIGRATION';
+        $baseDir    = dirname(__DIR__, 2);
+        $uploadsDir = $baseDir . '/storage/uploads/';
         $results = [];
         $successCount = 0;
         $failCount = 0;
@@ -768,7 +891,36 @@ class LegacyImportController extends Controller {
                     throw new \Exception('Gagal insert script_library: ' . print_r(db_errors(), true));
                 }
 
-                // ── 3. Audit trail ──
+                // ── 3. Insert review doc files (optional) ──
+                if ($zip) {
+                    $safeTicket = preg_replace('/[\/\\\\:*?"<>|]/', '_', $ticket);
+                    $scriptFolder = $uploadsDir . $safeTicket . '/';
+                    if (!is_dir($scriptFolder)) mkdir($scriptFolder, 0777, true);
+
+                    $reviewDocMap = [
+                        'file_legal'   => 'LEGAL',
+                        'file_cx'      => 'CX',
+                        'file_syariah' => 'LEGAL_SYARIAH',
+                        'file_lpp'     => 'LPP',
+                    ];
+                    foreach ($reviewDocMap as $rowKey => $dbType) {
+                        $docFileName = trim($row[$rowKey] ?? '');
+                        if (empty($docFileName)) continue;
+
+                        $docZipPath = $zipContents[$docFileName] ?? null;
+                        if ($docZipPath) {
+                            $docDest = $scriptFolder . $docFileName;
+                            $docData = $zip->getFromName($docZipPath);
+                            if ($docData !== false) {
+                                file_put_contents($docDest, $docData);
+                            }
+                            $docRelPath = 'storage/uploads/' . $safeTicket . '/' . $docFileName;
+                            $reqModel->saveFileInfo($requestId, $dbType, $docFileName, $docRelPath, $userId);
+                        }
+                    }
+                }
+
+                // ── 4. Audit trail ──
                 $reqModel->logAudit(
                     $requestId, $scriptNumber,
                     'LEGACY_IMPORT',
@@ -786,6 +938,8 @@ class LegacyImportController extends Controller {
             }
         }
 
+        if ($zip) $zip->close();
+        if ($zipPath) @unlink($zipPath);
         unset($_SESSION['legacy_import_text']);
 
         $this->view('admin/legacy_import', [

@@ -76,7 +76,7 @@ $currentMode = $import_mode ?? 'file'; // file | text
                     </label>
                     <input type="file" name="zip_file" accept=".zip" required
                            style="width:100%; padding:10px; border:2px dashed #cbd5e1; border-radius:8px; font-size:13px; background:#f8fafc; cursor:pointer; box-sizing:border-box;">
-                    <p style="margin:4px 0 0 0; font-size:11px; color:#94a3b8;">Format: .zip — Berisi file-file yang disebut di kolom "Nama_File" pada CSV</p>
+                    <p style="margin:4px 0 0 0; font-size:11px; color:#94a3b8;">Format: .zip — Berisi file-file yang disebut di kolom "Nama_File" dan file review (Legal/CX/Syariah/LPP) pada CSV</p>
                 </div>
                 <!-- Extract HTML Checkbox -->
                 <div style="margin-bottom:20px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px 16px;">
@@ -118,10 +118,18 @@ $currentMode = $import_mode ?? 'file'; // file | text
                            style="width:100%; padding:10px; border:2px dashed #c4b5fd; border-radius:8px; font-size:13px; background:#faf5ff; cursor:pointer; box-sizing:border-box;">
                     <p style="margin:4px 0 0 0; font-size:11px; color:#94a3b8;">Format: .csv — Gunakan Template Teks (ungu) yang sudah didownload</p>
                 </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">
+                        📎 File ZIP Lampiran Review <span style="color:#94a3b8; font-weight:400;">(Opsional — hanya jika ada file Legal/CX/Syariah/LPP)</span>
+                    </label>
+                    <input type="file" name="text_zip_file" accept=".zip"
+                           style="width:100%; padding:10px; border:2px dashed #c4b5fd; border-radius:8px; font-size:13px; background:#faf5ff; cursor:pointer; box-sizing:border-box;">
+                    <p style="margin:4px 0 0 0; font-size:11px; color:#94a3b8;">Format: .zip — Berisi file yang disebut di kolom File_Legal/CX/Syariah/LPP pada CSV</p>
+                </div>
                 <div style="background:#f5f3ff; border:1px solid #c4b5fd; border-radius:10px; padding:12px 14px; margin-bottom:20px; display:flex; align-items:flex-start; gap:10px;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     <div style="font-size:12px; color:#5b21b6; line-height:1.5;">
-                        <strong>Mode Teks Langsung:</strong> Cukup 1 file CSV saja. Isi teks naskah dipaste langsung di kolom terakhir. <strong>Tidak perlu ZIP</strong>. Sistem akan auto-repair jika ada Enter yang salah.
+                        <strong>Mode Teks Langsung:</strong> Cukup 1 file CSV saja. Isi teks naskah dipaste langsung di kolom ke-8. <strong>ZIP opsional</strong> hanya jika ingin melampirkan file Legal/CX/Syariah/LPP.
                     </div>
                 </div>
                 <button type="submit" style="background:#7c3aed; color:white; border:none; padding:12px 28px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:8px;">
@@ -208,6 +216,10 @@ $currentMode = $import_mode ?? 'file'; // file | text
                         <?php else: ?>
                             <th style="padding:10px; border-bottom:2px solid #e2e8f0;">File</th>
                         <?php endif; ?>
+                        <th style="padding:10px; border-bottom:2px solid #e2e8f0; font-size:11px;">Legal</th>
+                        <th style="padding:10px; border-bottom:2px solid #e2e8f0; font-size:11px;">CX</th>
+                        <th style="padding:10px; border-bottom:2px solid #e2e8f0; font-size:11px;">Syariah</th>
+                        <th style="padding:10px; border-bottom:2px solid #e2e8f0; font-size:11px;">LPP</th>
                         <th style="padding:10px; border-bottom:2px solid #e2e8f0;">Keterangan</th>
                     </tr>
                 </thead>
@@ -255,6 +267,27 @@ $currentMode = $import_mode ?? 'file'; // file | text
                                 </div>
                             </td>
                         <?php endif; ?>
+                        <?php
+                            // Review Doc Columns (shared between modes)
+                            $docKeys = [
+                                'legal' => 'file_legal', 'cx' => 'file_cx',
+                                'syariah' => 'file_syariah', 'lpp' => 'file_lpp'
+                            ];
+                            foreach ($docKeys as $dKey => $dField):
+                                $docFile = $row[$dField] ?? '';
+                                $docOk = $row['review_doc_found'][$dKey] ?? null;
+                        ?>
+                        <td style="padding:10px; font-size:11px;">
+                            <?php if (!empty($docFile)): ?>
+                                <span title="<?php echo htmlspecialchars($docFile); ?>" style="display:flex; align-items:center; gap:3px;">
+                                    <?php echo $docOk ? '✅' : '⚠️'; ?>
+                                    <span style="max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block;"><?php echo htmlspecialchars($docFile); ?></span>
+                                </span>
+                            <?php else: ?>
+                                <span style="color:#cbd5e1;">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <?php endforeach; ?>
                         <td style="padding:10px; font-size:11px; color:<?php echo $row['status'] === 'error' ? '#dc2626' : '#16a34a'; ?>;">
                             <?php echo $row['status'] === 'ready' ? 'Siap' : implode(', ', $row['errors']); ?>
                         </td>

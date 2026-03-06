@@ -64,19 +64,22 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Dept <small style="color:#94a3b8">(hanya PIC/ADMIN)</small></label>
-                        <input type="text" name="dept" value="<?php echo htmlspecialchars($role); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none;">
+                        <input type="text" name="dept" value="<?php echo htmlspecialchars($role); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none; box-sizing: border-box;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Job Function <small style="color:#94a3b8">(MAKER/SPV)</small></label>
-                        <input type="text" name="job_function" value="<?php echo htmlspecialchars($job_func); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none;">
+                        <input type="text" name="job_function" value="<?php echo htmlspecialchars($job_func); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none; box-sizing: border-box;">
                     </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Divisi <small style="color:#94a3b8">(PROCEDURE)</small></label>
-                        <input type="text" name="divisi" value="<?php echo htmlspecialchars($divisi); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none;">
+                        <input type="text" name="divisi" value="<?php echo htmlspecialchars($divisi); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none; box-sizing: border-box;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Group Name (Unit)</label>
-                        <input type="text" name="group_name" value="<?php echo htmlspecialchars($group); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none;">
+                        <input type="text" name="group_name" value="<?php echo htmlspecialchars($group); ?>" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; outline: none; box-sizing: border-box;">
                     </div>
                 </div>
 
