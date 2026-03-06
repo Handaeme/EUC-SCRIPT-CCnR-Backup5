@@ -961,8 +961,10 @@ class RequestController extends Controller {
             $ticketId = $reqResult['ticket_id'] ?? $scriptNumber;
 
             // Move temporarily uploaded file to ticket folder
+            // [FIX] Use ticket_id (SC-XXXX) instead of script_number (contains slashes → nested dirs)
+            $folderName = $ticketId;
             if (isset($input['filepath']) && file_exists($input['filepath'])) {
-                $ticketDir = dirname(__DIR__, 2) . '/storage/uploads/' . $scriptNumber . '/';
+                $ticketDir = dirname(__DIR__, 2) . '/storage/uploads/' . $folderName . '/';
                 if (!is_dir($ticketDir)) mkdir($ticketDir, 0777, true);
                 
                 $newPath = $ticketDir . $input['filename'];
@@ -1316,9 +1318,10 @@ class RequestController extends Controller {
             // Final Filename
             $filename = "{$safeType}_{$year}_{$formattedTicket}_{$safeOriginal}.{$ext}";
             
-            // Create upload directory (ABSOLUTE PATH SECURE) grouped by Script Number
-            $scriptNumberForFolder = $request['script_number'] ?? $formattedTicket;
-            $uploadDir = dirname(__DIR__, 2) . '/storage/uploads/' . $scriptNumberForFolder . '/';
+            // Create upload directory (ABSOLUTE PATH SECURE) grouped by Ticket ID (SC-XXXX)
+            // [FIX] Use ticket_id instead of script_number to avoid nested dirs from slashes
+            $folderName = $formattedTicket; // ticket_id is always SC-XXXX (flat, no slashes)
+            $uploadDir = dirname(__DIR__, 2) . '/storage/uploads/' . $folderName . '/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
             }
