@@ -49,19 +49,19 @@ function actionBadge($action) {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 10px;
+    margin-bottom: 18px;
     padding-bottom: 8px;
 }
 .dash-row2 > div {
-    min-width: 280px;
-    flex-shrink: 0;
+    min-width: 0;
+    flex: 1;
+    flex-shrink: 1;
     scroll-snap-align: start;
-    flex: 1; /* Allow them to grow and fill empty space on large screens if desired, but prioritize scroll if not fitting */
 }
 .dash-row2 > div:first-child {
-    min-width: 400px;
-    flex: 2; /* Trend chart takes more space if available */
+    min-width: 0;
+    flex: 1.5;
 }
 /* subtle scrollbar */
 .dash-row2::-webkit-scrollbar { height: 6px; }
@@ -73,8 +73,9 @@ function actionBadge($action) {
 
 @media (max-width: 768px) {
     .dash-row3 { grid-template-columns: 1fr; }
-    .dash-row2 > div:first-child { min-width: 300px; }
-    .dash-row2 > div { min-width: 240px; }
+    .dash-row2 { flex-wrap: wrap; }
+    .dash-row2 > div:first-child { min-width: 280px; }
+    .dash-row2 > div { min-width: 220px; }
     .dash-table-wrap table { font-size: 12px; }
 }
 </style>
@@ -178,15 +179,15 @@ function actionBadge($action) {
     <div class="dash-row2">
 
         <!-- Line: Monthly Trend -->
-        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);display:flex;flex-direction:column;">
+        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);display:flex;flex-direction:column;">
             <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <span style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></span>
                 Tren Publikasi (6 Bulan Terakhir)
             </div>
-            <div style="height:180px;flex-shrink:0;">
+            <div style="height:140px;flex-shrink:0;">
                 <canvas id="chartTrend"></canvas>
             </div>
-            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:8px;flex-grow:1;align-content:start;">
+            <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:4px;flex-grow:1;align-content:start;">
                 <?php 
                 if (!empty($monthly_trend)) {
                     foreach (array_reverse($monthly_trend) as $m) {
@@ -202,12 +203,12 @@ function actionBadge($action) {
         </div>
 
         <!-- Donut: By Jenis -->
-        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
             <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
                 <span style="width:8px;height:8px;background:#6366f1;border-radius:50%;display:inline-block;"></span>
                 By Jenis
             </div>
-            <div style="height:180px;display:flex;align-items:center;justify-content:center;">
+            <div style="height:140px;display:flex;align-items:center;justify-content:center;">
                 <canvas id="chartJenis"></canvas>
             </div>
             <div style="margin-top:12px;">
@@ -216,12 +217,12 @@ function actionBadge($action) {
         </div>
 
         <!-- Donut: By Produk -->
-        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
             <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
                 <span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;"></span>
                 By Produk
             </div>
-            <div style="height:180px;display:flex;align-items:center;justify-content:center;">
+            <div style="height:140px;display:flex;align-items:center;justify-content:center;">
                 <canvas id="chartProduk"></canvas>
             </div>
             <div style="margin-top:12px;">
@@ -230,12 +231,12 @@ function actionBadge($action) {
         </div>
 
         <!-- Donut: By Kategori -->
-        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+        <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
             <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
                 <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;display:inline-block;"></span>
                 By Kategori
             </div>
-            <div style="height:180px;display:flex;align-items:center;justify-content:center;">
+            <div style="height:140px;display:flex;align-items:center;justify-content:center;">
                 <canvas id="chartKategori"></canvas>
             </div>
             <div style="margin-top:12px;">
