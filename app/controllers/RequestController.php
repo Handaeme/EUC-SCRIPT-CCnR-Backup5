@@ -243,6 +243,7 @@ class RequestController extends Controller {
         header('Content-Type: application/json');
         
         $input = json_decode(file_get_contents('php://input'), true);
+         
         
         if (!isset($input['request_id'])) {
              ob_clean();
@@ -841,6 +842,50 @@ class RequestController extends Controller {
         echo json_encode(['success'=>true]);
     }
 
+    /**
+     * Toggle On Hold (SLA Pause/Resume) — For PROCEDURE role only.
+     * Used when waiting for external documents (Legal/CX/Syariah).
+     */
+    public function toggleOnHold() {
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($input['request_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Missing request_id']);
+            return;
+        }
+
+        // Authorization: Only PROCEDURE can toggle On Hold
+        $userRole = strtoupper($_SESSION['user']['dept'] ?? '');
+        if ($userRole !== 'PROCEDURE' && $userRole !== 'ADMIN') {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized: Only PROCEDURE role can toggle On Hold']);
+            return;
+        }
+
+        $reqModel = $this->model('RequestModel');
+        $req = $reqModel->getRequestById($input['request_id']);
+        
+        if (!$req) {
+            echo json_encode(['success' => false, 'error' => 'Request not found']);
+            return;
+        }
+
+        $isOnHold = !empty($input['is_on_hold']); // true = pause, false = resume
+        $userId = $_SESSION['user']['userid'] ?? 'UNKNOWN';
+        
+        $result = $reqModel->toggleOnHold($input['request_id'], $isOnHold, $userId);
+        
+        if ($result) {
+            echo json_encode([
+                'success' => true, 
+                'message' => $isOnHold ? 'SLA dijeda (On Hold). Menunggu dokumen eksternal.' : 'SLA dilanjutkan kembali.',
+                'is_on_hold' => $isOnHold
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Gagal mengubah status On Hold']);
+        }
+    }
+
     public function upload() {
         header('Content-Type: application/json');
 
@@ -861,10 +906,20 @@ class RequestController extends Controller {
         // Ensure dir exists
         if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
+        // [FIX] Clean up previous preview file if user re-uploads
+        if (!empty($_SESSION['preview_filepath']) && file_exists($_SESSION['preview_filepath'])) {
+            @unlink($_SESSION['preview_filepath']);
+        }
+
         $filename = uniqid() . '_' . basename($file['name']);
         $targetPath = $targetDir . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            // [FIX] Store preview filepath in session for reuse in store()
+            $_SESSION['preview_filepath'] = $targetPath;
+            $_SESSION['preview_filename'] = $filename;
+            $_SESSION['preview_original_name'] = basename($file['name']);
+
             // Parse File
             $parseResult = FileHandler::parseFile($targetPath, $ext);
             
@@ -889,24 +944,31 @@ class RequestController extends Controller {
             // Read FormData from POST (not JSON)
             $input = $_POST;
             
-            // Handle file upload if present
-            if (isset($_FILES['script_file'])) {
-                // File upload mode - process file first
-                $file = $_FILES['script_file'];
-                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $targetDir = dirname(__DIR__, 2) . '/storage/uploads/';
-                
-                if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
-                
-                $filename = uniqid() . '_' . basename($file['name']);
-                $targetPath = $targetDir . $filename;
-                
-                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    $input['filepath'] = $targetPath;
-                    $input['filename'] = $filename;
-                } else {
-                    echo json_encode(['status' => 'error', 'message' => 'Failed to upload file']);
-                    return;
+            // [FIX] Reuse preview file from session instead of re-uploading
+            if (isset($input['input_mode']) && $input['input_mode'] === 'FILE_UPLOAD') {
+                if (!empty($_SESSION['preview_filepath']) && file_exists($_SESSION['preview_filepath'])) {
+                    // Reuse the file already uploaded during preview
+                    $input['filepath'] = $_SESSION['preview_filepath'];
+                    $input['filename'] = $_SESSION['preview_filename'];
+                    $input['original_name'] = $_SESSION['preview_original_name'] ?? basename($_SESSION['preview_filepath']);
+                } elseif (isset($_FILES['script_file'])) {
+                    // Fallback: if session lost, handle fresh upload
+                    $file = $_FILES['script_file'];
+                    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $targetDir = dirname(__DIR__, 2) . '/storage/uploads/';
+                    
+                    if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+                    
+                    $filename = uniqid() . '_' . basename($file['name']);
+                    $targetPath = $targetDir . $filename;
+                    
+                    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                        $input['filepath'] = $targetPath;
+                        $input['filename'] = $filename;
+                    } else {
+                        echo json_encode(['status' => 'error', 'message' => 'Failed to upload file']);
+                        return;
+                    }
                 }
             }
             
@@ -960,8 +1022,7 @@ class RequestController extends Controller {
             $scriptNumber = $reqResult['number'];
             $ticketId = $reqResult['ticket_id'] ?? $scriptNumber;
 
-            // Move temporarily uploaded file to ticket folder
-            // [FIX] Use ticket_id (SC-XXXX) instead of script_number (contains slashes → nested dirs)
+            // Move preview file to ticket folder (SC-XXXX)
             $folderName = $ticketId;
             if (isset($input['filepath']) && file_exists($input['filepath'])) {
                 $ticketDir = dirname(__DIR__, 2) . '/storage/uploads/' . $folderName . '/';
@@ -972,6 +1033,9 @@ class RequestController extends Controller {
                     $input['filepath'] = $newPath; // Update path for DB saving
                 }
             }
+
+            // [FIX] Clear preview session after file is moved to SC folder
+            unset($_SESSION['preview_filepath'], $_SESSION['preview_filename'], $_SESSION['preview_original_name']);
 
             // 2. Save Preview Content
             // Logic: Content might be a single string (from File Upload) or an Object/Array (from Free Input Tabs)

@@ -1,6 +1,7 @@
 <?php
 require_once 'app/views/layouts/header.php';
 require_once 'app/views/layouts/sidebar.php';
+use App\Helpers\DateTimeHelper;
 ?>
 
 <div class="main">
@@ -182,6 +183,36 @@ require_once 'app/views/layouts/sidebar.php';
                     });
                     </script>
 
+                    <!-- SLA Filter -->
+                    <?php
+                        $slaFilterOptions = ['Aman', 'Warning', 'Overdue', 'On Hold'];
+                        $slaSelected = $_GET['sla_filter'] ?? '';
+                    ?>
+                    <div style="flex: 1 1 200px;">
+                        <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:8px; display:block; text-transform:uppercase; letter-spacing:0.5px;">SLA Status</label>
+                        <select name="sla_filter" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#334155; background:white; cursor:pointer;">
+                            <option value="">Semua SLA</option>
+                            <?php foreach ($slaFilterOptions as $sOpt): ?>
+                                <option value="<?php echo strtolower($sOpt); ?>" <?php echo (strtolower($slaSelected) === strtolower($sOpt)) ? 'selected' : ''; ?>><?php echo $sOpt; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Aging Filter -->
+                    <?php
+                        $agingFilterOptions = ['≤ 3 Hari', '4-7 Hari', '> 7 Hari'];
+                        $agingSelected = $_GET['aging_filter'] ?? '';
+                    ?>
+                    <div style="flex: 1 1 200px;">
+                        <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:8px; display:block; text-transform:uppercase; letter-spacing:0.5px;">Aging</label>
+                        <select name="aging_filter" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#334155; background:white; cursor:pointer;">
+                            <option value="">Semua Aging</option>
+                            <?php foreach ($agingFilterOptions as $aOpt): ?>
+                                <option value="<?php echo htmlspecialchars($aOpt); ?>" <?php echo ($agingSelected === $aOpt) ? 'selected' : ''; ?>><?php echo $aOpt; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                 </div>
 
                 <!-- Active Filter Tags -->
@@ -240,7 +271,9 @@ require_once 'app/views/layouts/sidebar.php';
                             <th style="padding:10px; border-bottom:2px solid #eee;">Jenis</th>
                             <th style="padding:10px; border-bottom:2px solid #eee;">Isi Script</th>
                             <th style="padding:10px; border-bottom:2px solid #eee;">Status</th>
-                            <th style="padding:10px; border-bottom:2px solid #eee; text-align:right; cursor:pointer;" onclick="sortTableByDate(10)">
+                            <th style="padding:10px; border-bottom:2px solid #eee;">Aging</th>
+                            <th style="padding:10px; border-bottom:2px solid #eee;">SLA</th>
+                            <th style="padding:10px; border-bottom:2px solid #eee; text-align:right; cursor:pointer;" onclick="sortTableByDate(12)">
                                 <div style="display:flex; align-items:center; justify-content:flex-end; gap:5px;">
                                     Last Update
                                     <svg id="sort-icon-10" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:<?php echo isset($sortUpdated) ? '1' : '0.3'; ?>;">

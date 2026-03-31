@@ -189,6 +189,44 @@
         </span>
     </td>
 
+    <!-- Aging (Total umur tiket sejak dibuat) -->
+    <?php
+        $createdDateStr = ($row['created_date'] instanceof DateTime) ? $row['created_date']->format('Y-m-d H:i:s') : ($row['created_date'] ?? '');
+        $aging = \App\Helpers\DateTimeHelper::getAging($createdDateStr);
+    ?>
+    <td style="padding:10px; text-align:center;">
+        <span style="background:#f8fafc; border:1px solid #e2e8f0; color:<?php echo $aging['color']; ?>; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; white-space:nowrap;">
+            <?php echo $aging['label']; ?>
+        </span>
+    </td>
+
+    <!-- SLA / Durasi Proses (Berapa lama tiket di tahap ini) -->
+    <?php
+        // Calculate SLA: use status_updated_at (when ticket entered current stage) vs current timestamp
+        $slaDeadlineStr = isset($row['sla_deadline']) ? (($row['sla_deadline'] instanceof DateTime) ? $row['sla_deadline']->format('Y-m-d H:i:s') : $row['sla_deadline']) : null;
+        $isOnHold = !empty($row['is_on_hold']);
+        $slaInfo = \App\Helpers\DateTimeHelper::getSlaStatus($slaDeadlineStr, $isOnHold);
+        
+        // For completed/library items, show how many working days it took (TAT)
+        $statusUpper = strtoupper($row['status'] ?? '');
+        if (in_array($statusUpper, ['APPROVED', 'LIBRARY', 'CLOSED', 'APPROVED_PROCEDURE'])) {
+            // Finished — show total turnaround
+            $statusUpdatedStr = isset($row['status_updated_at']) ? (($row['status_updated_at'] instanceof DateTime) ? $row['status_updated_at']->format('Y-m-d H:i:s') : $row['status_updated_at']) : null;
+            $timestampStr = ($timestamp instanceof DateTime) ? $timestamp->format('Y-m-d H:i:s') : ($timestamp ?? '');
+            if ($statusUpdatedStr && $timestampStr) {
+                $tat = \App\Helpers\DateTimeHelper::workingDaysBetween($createdDateStr, $timestampStr);
+                $slaInfo = ['icon' => '✅', 'label' => $tat . ' Hari Kerja', 'color' => '#16a34a', 'bg' => '#f0fdf4'];
+            } else {
+                $slaInfo = ['icon' => '✅', 'label' => 'Selesai', 'color' => '#16a34a', 'bg' => '#f0fdf4'];
+            }
+        }
+    ?>
+    <td style="padding:10px; text-align:center;">
+        <span style="background:<?php echo $slaInfo['bg']; ?>; color:<?php echo $slaInfo['color']; ?>; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
+            <?php echo $slaInfo['icon']; ?> <?php echo $slaInfo['label']; ?>
+        </span>
+    </td>
+
     <!-- Last Updated (Full DateTime) -->
     <td style="padding:10px; text-align:right;" data-sort-val="<?php echo ($timestamp instanceof DateTime) ? $timestamp->getTimestamp() : strtotime($timestamp); ?>">
         <div style="font-weight:700; color:#374151; font-size:11px;"><?php echo ($timestamp instanceof DateTime) ? $timestamp->format('d M Y, H:i') : ($timestamp ? date('d M Y, H:i', strtotime($timestamp)) : '-'); ?></div>

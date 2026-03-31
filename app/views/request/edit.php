@@ -188,7 +188,7 @@ require_once 'app/views/layouts/sidebar.php';
                             <div id="produk-konv" style="display:<?php echo (strpos($request['jenis'], 'Konvensional')!==false)?'block':'none'; ?>; padding:10px; background:#f8fafc; border-left:3px solid var(--primary-red); margin-bottom:8px; border-radius:4px;">
                                 <div style="display:flex; flex-wrap:wrap; gap:10px;">
                                     <label style="font-size:12px;"><input type="checkbox" name="produk" value="Kartu Kredit" <?php echo in_array('Kartu Kredit', $prodVals)?'checked':''; ?>> Kartu Kredit</label>
-                                    <label style="font-size:12px;"><input type="checkbox" name="produk" value="Extra Dana" <?php echo in_array('Extra Dana', $prodVals)?'checked':''; ?>> Extra Dana</label>
+                                    <label style="font-size:12px;"><input type="checkbox" name="produk" value="Xtra Dana" <?php echo in_array('Xtra Dana', $prodVals)?'checked':''; ?>> Xtra Dana</label>
                                     <label style="font-size:12px;"><input type="checkbox" name="produk" value="KPR" <?php echo in_array('KPR', $prodVals)?'checked':''; ?>> KPR</label>
                                     <label style="font-size:12px;"><input type="checkbox" name="produk" value="Others" onchange="toggleInput('prod_konv_other', this.checked)" <?php echo ($otherProd)?'checked':''; ?>> Others</label>
                                 </div>
@@ -198,7 +198,7 @@ require_once 'app/views/layouts/sidebar.php';
                             <div id="produk-syariah" style="display:<?php echo (strpos($request['jenis'], 'Syariah')!==false)?'block':'none'; ?>; padding:10px; background:#f8fafc; border-left:3px solid #16a34a; margin-bottom:8px; border-radius:4px;">
                                 <div style="display:flex; flex-wrap:wrap; gap:10px;">
                                     <label style="font-size:12px;"><input type="checkbox" name="produk" value="Kartu Syariah" <?php echo in_array('Kartu Syariah', $prodVals)?'checked':''; ?>> Kartu Syariah</label>
-                                    <label style="font-size:12px;"><input type="checkbox" name="produk" value="Extra Dana iB" <?php echo in_array('Extra Dana iB', $prodVals)?'checked':''; ?>> Extra Dana iB</label>
+                                    <label style="font-size:12px;"><input type="checkbox" name="produk" value="Xtra Dana iB" <?php echo in_array('Xtra Dana iB', $prodVals)?'checked':''; ?>> Xtra Dana iB</label>
                                     <label style="font-size:12px;"><input type="checkbox" name="produk" value="KPR iB" <?php echo in_array('KPR iB', $prodVals)?'checked':''; ?>> KPR iB</label>
                                 </div>
                             </div>

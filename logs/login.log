@@ -1006,3 +1006,54 @@
 [2026-03-06 11:08:57] Attempted login for user: maker01
 [2026-03-06 11:08:57] Local login successful for user: maker01
 [2026-03-06 11:08:57] Redirecting maker01 to index.php
+[2026-03-11 11:44:07] Attempted login for user: maker01
+[2026-03-11 11:44:07] Local login successful for user: maker01
+[2026-03-11 11:44:07] Redirecting maker01 to index.php
+[2026-03-26 09:35:03] Attempted login for user: maker01
+[2026-03-26 09:35:03] Local login successful for user: maker01
+[2026-03-26 09:35:03] Redirecting maker01 to index.php
+[2026-03-26 17:19:55] Attempted login for user: maker01
+[2026-03-26 17:19:55] Local login successful for user: maker01
+[2026-03-26 17:19:55] Redirecting maker01 to index.php
+[2026-03-26 17:22:05] Attempted login for user: HS1234X
+[2026-03-26 17:22:05] Local login successful for user: HS1234X
+[2026-03-26 17:22:05] Redirecting HS1234X to index.php
+[2026-03-26 18:05:36] Attempted login for user: maker01
+[2026-03-26 18:05:36] Local login successful for user: maker01
+[2026-03-26 18:05:36] Redirecting maker01 to index.php
+[2026-03-26 18:06:54] Attempted login for user: HS1234X
+[2026-03-26 18:06:54] Local login successful for user: HS1234X
+[2026-03-26 18:06:54] Redirecting HS1234X to index.php
+[2026-03-26 18:08:23] Attempted login for user: pic01
+[2026-03-26 18:08:23] Local login successful for user: pic01
+[2026-03-26 18:08:23] Redirecting pic01 to index.php
+[2026-03-26 18:08:40] Attempted login for user: maker01
+[2026-03-26 18:08:40] Local login successful for user: maker01
+[2026-03-26 18:08:40] Redirecting maker01 to index.php
+[2026-03-26 18:09:47] Attempted login for user: HS1234X
+[2026-03-26 18:09:47] Local login successful for user: HS1234X
+[2026-03-26 18:09:47] Redirecting HS1234X to index.php
+[2026-03-26 18:11:20] Attempted login for user: maker01
+[2026-03-26 18:11:20] Local login successful for user: maker01
+[2026-03-26 18:11:20] Redirecting maker01 to index.php
+[2026-03-26 18:12:27] Attempted login for user: HS1234X
+[2026-03-26 18:12:27] Local login successful for user: HS1234X
+[2026-03-26 18:12:27] Redirecting HS1234X to index.php
+[2026-03-27 08:43:01] Attempted login for user: maker01
+[2026-03-27 08:43:01] Local login successful for user: maker01
+[2026-03-27 08:43:01] Redirecting maker01 to index.php
+[2026-03-27 08:45:08] Attempted login for user: HS1234X
+[2026-03-27 08:45:08] Local login successful for user: HS1234X
+[2026-03-27 08:45:08] Redirecting HS1234X to index.php
+[2026-03-27 08:46:03] Attempted login for user: pic01
+[2026-03-27 08:46:03] Local login successful for user: pic01
+[2026-03-27 08:46:03] Redirecting pic01 to index.php
+[2026-03-27 08:46:41] Attempted login for user: proc01
+[2026-03-27 08:46:41] Local login successful for user: proc01
+[2026-03-27 08:46:41] Redirecting proc01 to index.php
+[2026-03-30 15:06:29] Attempted login for user: maker01
+[2026-03-30 15:06:29] Local login successful for user: maker01
+[2026-03-30 15:06:29] Redirecting maker01 to index.php
+[2026-03-30 15:07:20] Attempted login for user: HS1234X
+[2026-03-30 15:07:20] Local login successful for user: HS1234X
+[2026-03-30 15:07:20] Redirecting HS1234X to index.php

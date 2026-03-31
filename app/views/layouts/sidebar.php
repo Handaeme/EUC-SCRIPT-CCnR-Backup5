@@ -27,16 +27,20 @@
         $badgeCount = 0;
         $userid = $_SESSION['user']['userid'] ?? '';
 
-        // Determine badge count
+        // Determine badge count + SLA overdue count
+        $overdueCount = 0;
         if ($role === 'SPV') {
             $pending = $reqModel->getPendingRequests($userid, 'SPV');
             $badgeCount = count($pending);
+            $overdueCount = $reqModel->getOverdueCount($userid, 'SPV');
         } elseif ($role === 'PIC') {
             $pending = $reqModel->getPendingRequests($userid, 'PIC');
             $badgeCount = count($pending);
+            $overdueCount = $reqModel->getOverdueCount($userid, 'PIC');
         } elseif ($role === 'PROCEDURE') {
             $pending = $reqModel->getPendingRequests($userid, 'PROCEDURE');
             $badgeCount = count($pending);
+            $overdueCount = $reqModel->getOverdueCount($userid, 'PROCEDURE');
         } elseif ($role === 'MAKER' || $role === 'Maker') {
             // Count Pending Revisions for Maker
             $stats = $reqModel->getMakerStats($userid);
@@ -99,6 +103,9 @@
                 ?>
                 <?php if ($badgeCount > 0): ?>
                     <span style="background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:auto; font-weight:bold;"><?php echo $badgeCount; ?></span>
+                <?php endif; ?>
+                <?php if ($overdueCount > 0): ?>
+                    <span style="background:#dc2626; color:white; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:bold; animation: pulse-badge 1.5s infinite; margin-left:3px;" title="<?php echo $overdueCount; ?> tiket melewati batas SLA">⚠ <?php echo $overdueCount; ?></span>
                 <?php endif; ?>
             </a>
         <?php endif; ?>

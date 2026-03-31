@@ -1,6 +1,7 @@
 <?php
 require_once 'app/views/layouts/header.php';
 require_once 'app/views/layouts/sidebar.php';
+use App\Helpers\DateTimeHelper;
 
 // Defaults
 $title = isset($pageTitle) ? $pageTitle : 'Dashboard Approval';
@@ -124,7 +125,7 @@ $historyCount = $stats['history'] ?? 0;
                         'jenis' => 'Jenis', 
                         'produk' => 'Produk', 
                         'kategori' => 'Kategori', 
-                        'media' => 'Media Channel'
+                        'media' => 'Media Channel',
                     ];
                     
                     foreach ($filterLabels as $key => $label): 
@@ -189,6 +190,36 @@ $historyCount = $stats['history'] ?? 0;
                     });
                     </script>
 
+                    <!-- SLA Filter -->
+                    <?php
+                        $slaFilterOptions = ['Aman', 'Warning', 'Overdue', 'On Hold'];
+                        $slaSelected = $_GET['sla_filter'] ?? '';
+                    ?>
+                    <div>
+                        <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:8px; display:block; text-transform:uppercase; letter-spacing:0.5px;">SLA Status</label>
+                        <select name="sla_filter" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#334155; background:white; cursor:pointer;">
+                            <option value="">Semua SLA</option>
+                            <?php foreach ($slaFilterOptions as $sOpt): ?>
+                                <option value="<?php echo strtolower($sOpt); ?>" <?php echo (strtolower($slaSelected) === strtolower($sOpt)) ? 'selected' : ''; ?>><?php echo $sOpt; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Aging Filter -->
+                    <?php
+                        $agingFilterOptions = ['≤ 3 Hari', '4-7 Hari', '> 7 Hari'];
+                        $agingSelected = $_GET['aging_filter'] ?? '';
+                    ?>
+                    <div>
+                        <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:8px; display:block; text-transform:uppercase; letter-spacing:0.5px;">Aging</label>
+                        <select name="aging_filter" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#334155; background:white; cursor:pointer;">
+                            <option value="">Semua Aging</option>
+                            <?php foreach ($agingFilterOptions as $aOpt): ?>
+                                <option value="<?php echo htmlspecialchars($aOpt); ?>" <?php echo ($agingSelected === $aOpt) ? 'selected' : ''; ?>><?php echo $aOpt; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                 </div>
 
 
@@ -251,15 +282,31 @@ $historyCount = $stats['history'] ?? 0;
                         <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase;">Jenis</th>
                         <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase; width:150px;">Isi Script</th>
                          <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase;">Current Status</th>
+                        <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase;">Aging</th>
+                        <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase;">SLA</th>
                         <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase;">Requester</th>
-                        <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase; cursor:pointer;" onclick="sortTableByDate(10, 'dataTable')">
+                        <th style="padding:10px; border-bottom:2px solid #eee; color:#64748b; font-size:11px; text-transform:uppercase; cursor:pointer;" onclick="sortTableByDate(13, 'dataTable')">
                             Date <i class="fi fi-rr-sort" style="font-size:10px; margin-left:2px; vertical-align:middle;"></i>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($pendingRequests as $index => $req): ?>
-                    <tr style="border-bottom:1px solid #eee;">
+                    <?php foreach ($pendingRequests as $index => $req): 
+                        // Calculate Aging & SLA for this row
+                        $createdAtRaw = ($req['created_at'] instanceof DateTime) ? $req['created_at']->format('Y-m-d H:i:s') : ($req['created_at'] ?? '');
+                        $aging = DateTimeHelper::getAging($createdAtRaw);
+                        
+                        $slaDeadlineRaw = ($req['sla_deadline'] ?? null);
+                        if ($slaDeadlineRaw instanceof DateTime) $slaDeadlineRaw = $slaDeadlineRaw->format('Y-m-d H:i:s');
+                        $isOnHold = !empty($req['is_on_hold']);
+                        $sla = DateTimeHelper::getSlaStatus($slaDeadlineRaw, $isOnHold);
+                        
+                        // Row background color based on SLA status
+                        $rowBg = '';
+                        if ($sla['status'] === 'overdue') $rowBg = 'background:#fef2f2;';
+                        elseif ($sla['status'] === 'warning') $rowBg = 'background:#fffbeb;';
+                    ?>
+                    <tr style="border-bottom:1px solid #eee; <?php echo $rowBg; ?>">
                         <td style="padding:10px;">
                             <a href="index.php?controller=request&action=review&id=<?php echo $req['id']; ?>" 
                                style="background:var(--primary-red); color:white; text-decoration:none; padding:4px 10px; border-radius:4px; font-size:11px; white-space:nowrap; font-weight:700;">
@@ -309,6 +356,18 @@ $historyCount = $stats['history'] ?? 0;
                                 <span style="font-size:10px; color:#6b21a8; font-weight:700; margin-left:3px;">(DRAFT)</span>
                             <?php endif; ?>
                         </td>
+                        <!-- AGING COLUMN -->
+                        <td style="padding:10px; text-align:center;">
+                            <span style="background:#f8fafc; border:1px solid #e2e8f0; color:<?php echo $aging['color']; ?>; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; white-space:nowrap;">
+                                <?php echo $aging['label']; ?>
+                            </span>
+                        </td>
+                        <!-- SLA COLUMN -->
+                        <td style="padding:10px; text-align:center;">
+                            <span style="background:<?php echo $sla['bg']; ?>; color:<?php echo $sla['color']; ?>; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
+                                <?php echo $sla['icon']; ?> <?php echo $sla['label']; ?>
+                            </span>
+                        </td>
                         <td style="padding:10px; font-weight:600; color:#334155;"><?php echo htmlspecialchars($req['created_by']); ?></td>
                         <td style="padding:10px;" data-sort-val="<?php 
                             $rawDate = $req['created_at'];
@@ -327,6 +386,10 @@ $historyCount = $stats['history'] ?? 0;
                 </tbody>
             </table>
         </div>
+        <!-- Pagination for Pending -->
+        <?php if (isset($totalPages)): ?>
+            <?php include __DIR__ . '/../layouts/pagination.php'; ?>
+        <?php endif; ?>
         <?php endif; ?>
 
         <?php else: ?>
@@ -442,6 +505,10 @@ $historyCount = $stats['history'] ?? 0;
                 </tbody>
             </table>
         </div>
+        <!-- Pagination for History -->
+        <?php if (isset($totalPages)): ?>
+            <?php include __DIR__ . '/../layouts/pagination.php'; ?>
+        <?php endif; ?>
         <?php endif; ?>
         <?php endif; ?>
 

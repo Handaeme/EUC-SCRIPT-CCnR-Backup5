@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Helpers\DateTimeHelper;
 
 class AuditController extends Controller {
 
@@ -40,6 +41,9 @@ class AuditController extends Controller {
         
         // Fetch Data with Search Support
         $logs = $reqModel->getAuditExportData($startDate, $endDate, $sortColumn, $sortOrder, $filters, $search);
+        
+        // === SLA/AGING FILTER ===
+        $logs = $this->filterBySlaAndAging($logs);
         
         // Pagination
         $page = max(1, intval($_GET['page'] ?? 1));
@@ -694,5 +698,57 @@ class AuditController extends Controller {
             header("Location: " . $location . "&error=" . urlencode("Failed to delete script."));
         }
         exit;
+    }
+
+    /**
+     * Filter audit trail rows by SLA status and/or Aging.
+     * Called before pagination so counts remain accurate.
+     */
+    private function filterBySlaAndAging(array $logs): array {
+        $slaFilter = strtolower($_GET['sla_filter'] ?? '');
+        $agingFilter = $_GET['aging_filter'] ?? '';
+        
+        if (empty($slaFilter) && empty($agingFilter)) return $logs;
+
+        return array_values(array_filter($logs, function($req) use ($slaFilter, $agingFilter) {
+            // SLA Filter
+            if (!empty($slaFilter)) {
+                $slaDeadline = $req['sla_deadline'] ?? null;
+                if ($slaDeadline instanceof \DateTime) $slaDeadline = $slaDeadline->format('Y-m-d H:i:s');
+                $isOnHold = !empty($req['is_on_hold']);
+                $sla = DateTimeHelper::getSlaStatus($slaDeadline, $isOnHold);
+                
+                $statusMap = [
+                    'aman' => 'safe',
+                    'warning' => 'warning',
+                    'overdue' => 'overdue',
+                    'on hold' => 'paused'
+                ];
+                $expectedStatus = $statusMap[$slaFilter] ?? '';
+                if ($expectedStatus && $sla['status'] !== $expectedStatus) return false;
+            }
+            
+            // Aging Filter
+            if (!empty($agingFilter)) {
+                $createdAt = $req['created_date'] ?? ''; // Note: export data uses created_date
+                if ($createdAt instanceof \DateTime) $createdAt = $createdAt->format('Y-m-d H:i:s');
+                $aging = DateTimeHelper::getAging($createdAt);
+                $days = $aging['days'];
+                
+                switch ($agingFilter) {
+                    case '≤ 3 Hari':
+                        if ($days > 3) return false;
+                        break;
+                    case '4-7 Hari':
+                        if ($days < 4 || $days > 7) return false;
+                        break;
+                    case '> 7 Hari':
+                        if ($days <= 7) return false;
+                        break;
+                }
+            }
+            
+            return true;
+        }));
     }
 }

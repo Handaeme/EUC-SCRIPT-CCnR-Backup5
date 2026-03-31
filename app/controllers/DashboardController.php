@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Helpers\DateTimeHelper;
 
 class DashboardController extends Controller {
 
@@ -134,6 +135,29 @@ class DashboardController extends Controller {
         // Stats
         $stats = $reqModel->getApprovalStats($user['userid'], 'SPV');
         
+        // === SLA/AGING FILTER ===
+        if ($viewMode === 'pending') {
+            $pendingRequests = $this->filterBySlaAndAging($pendingRequests);
+        }
+        // === PAGINATION ===
+        $perPage = intval($_GET['per_page'] ?? 10);
+        if (!in_array($perPage, [10, 20, 30, 50, 100])) $perPage = 10;
+        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+        
+        if ($viewMode === 'pending') {
+            $totalItems = count($pendingRequests);
+            $totalPages = max(1, ceil($totalItems / $perPage));
+            if ($page > $totalPages) $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+            $pendingRequests = array_slice($pendingRequests, $offset, $perPage);
+        } else {
+            $totalItems = count($historyRequests);
+            $totalPages = max(1, ceil($totalItems / $perPage));
+            if ($page > $totalPages) $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+            $historyRequests = array_slice($historyRequests, $offset, $perPage);
+        }
+        
         $this->view('dashboard/approval', [
             'pendingRequests' => $pendingRequests,
             'historyRequests' => $historyRequests,
@@ -145,7 +169,11 @@ class DashboardController extends Controller {
             'startDate' => $startDate,
             'endDate' => $endDate,
             'filterOptions' => $filterOptions,
-            'activeFilters' => $filters
+            'activeFilters' => $filters,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalItems' => $totalItems,
+            'perPage' => $perPage
         ]);
     }
 
@@ -184,6 +212,29 @@ class DashboardController extends Controller {
         // Stats
         $stats = $reqModel->getApprovalStats($user['userid'], 'PIC');
         
+        // === SLA/AGING FILTER ===
+        if ($viewMode === 'pending') {
+            $pendingRequests = $this->filterBySlaAndAging($pendingRequests);
+        }
+        // === PAGINATION ===
+        $perPage = intval($_GET['per_page'] ?? 10);
+        if (!in_array($perPage, [10, 20, 30, 50, 100])) $perPage = 10;
+        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+        
+        if ($viewMode === 'pending') {
+            $totalItems = count($pendingRequests);
+            $totalPages = max(1, ceil($totalItems / $perPage));
+            if ($page > $totalPages) $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+            $pendingRequests = array_slice($pendingRequests, $offset, $perPage);
+        } else {
+            $totalItems = count($historyRequests);
+            $totalPages = max(1, ceil($totalItems / $perPage));
+            if ($page > $totalPages) $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+            $historyRequests = array_slice($historyRequests, $offset, $perPage);
+        }
+        
         $this->view('dashboard/approval', [
             'pendingRequests' => $pendingRequests,
             'historyRequests' => $historyRequests,
@@ -195,7 +246,11 @@ class DashboardController extends Controller {
             'startDate' => $startDate,
             'endDate' => $endDate,
             'filterOptions' => $filterOptions,
-            'activeFilters' => $filters
+            'activeFilters' => $filters,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalItems' => $totalItems,
+            'perPage' => $perPage
         ]);
     }
 
@@ -234,6 +289,29 @@ class DashboardController extends Controller {
         // Stats
         $stats = $reqModel->getApprovalStats($user['userid'], 'PROCEDURE');
         
+        // === SLA/AGING FILTER ===
+        if ($viewMode === 'pending') {
+            $pendingRequests = $this->filterBySlaAndAging($pendingRequests);
+        }
+        // === PAGINATION ===
+        $perPage = intval($_GET['per_page'] ?? 10);
+        if (!in_array($perPage, [10, 20, 30, 50, 100])) $perPage = 10;
+        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+        
+        if ($viewMode === 'pending') {
+            $totalItems = count($pendingRequests);
+            $totalPages = max(1, ceil($totalItems / $perPage));
+            if ($page > $totalPages) $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+            $pendingRequests = array_slice($pendingRequests, $offset, $perPage);
+        } else {
+            $totalItems = count($historyRequests);
+            $totalPages = max(1, ceil($totalItems / $perPage));
+            if ($page > $totalPages) $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+            $historyRequests = array_slice($historyRequests, $offset, $perPage);
+        }
+        
         $this->view('dashboard/approval', [
             'pendingRequests' => $pendingRequests,
             'historyRequests' => $historyRequests,
@@ -245,7 +323,11 @@ class DashboardController extends Controller {
             'startDate' => $startDate,
             'endDate' => $endDate,
             'filterOptions' => $filterOptions,
-            'activeFilters' => $filters
+            'activeFilters' => $filters,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalItems' => $totalItems,
+            'perPage' => $perPage
         ]);
     }
 
@@ -632,5 +714,57 @@ class DashboardController extends Controller {
         $reqModel = $this->model('RequestModel');
         $dashStats = $reqModel->getLibraryDashboardStats();
         $this->view('dashboard/library_dashboard', ['dashStats' => $dashStats]);
+    }
+
+    /**
+     * Filter pending requests by SLA status and/or Aging.
+     * Called before pagination so counts remain accurate.
+     */
+    private function filterBySlaAndAging(array $requests): array {
+        $slaFilter = strtolower($_GET['sla_filter'] ?? '');
+        $agingFilter = $_GET['aging_filter'] ?? '';
+        
+        if (empty($slaFilter) && empty($agingFilter)) return $requests;
+
+        return array_values(array_filter($requests, function($req) use ($slaFilter, $agingFilter) {
+            // SLA Filter
+            if (!empty($slaFilter)) {
+                $slaDeadline = $req['sla_deadline'] ?? null;
+                if ($slaDeadline instanceof \DateTime) $slaDeadline = $slaDeadline->format('Y-m-d H:i:s');
+                $isOnHold = !empty($req['is_on_hold']);
+                $sla = DateTimeHelper::getSlaStatus($slaDeadline, $isOnHold);
+                
+                $statusMap = [
+                    'aman' => 'safe',
+                    'warning' => 'warning',
+                    'overdue' => 'overdue',
+                    'on hold' => 'paused'
+                ];
+                $expectedStatus = $statusMap[$slaFilter] ?? '';
+                if ($expectedStatus && $sla['status'] !== $expectedStatus) return false;
+            }
+            
+            // Aging Filter
+            if (!empty($agingFilter)) {
+                $createdAt = $req['created_at'] ?? '';
+                if ($createdAt instanceof \DateTime) $createdAt = $createdAt->format('Y-m-d H:i:s');
+                $aging = DateTimeHelper::getAging($createdAt);
+                $days = $aging['days'];
+                
+                switch ($agingFilter) {
+                    case '≤ 3 Hari':
+                        if ($days > 3) return false;
+                        break;
+                    case '4-7 Hari':
+                        if ($days < 4 || $days > 7) return false;
+                        break;
+                    case '> 7 Hari':
+                        if ($days <= 7) return false;
+                        break;
+                }
+            }
+            
+            return true;
+        }));
     }
 }

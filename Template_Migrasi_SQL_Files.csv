@@ -1,0 +1,3 @@
+Request_ID,File_Type,Original_Filename,Filepath,Uploaded_By,Query_SQL_Result
+[ID_DARI_SCRIPT_REQUEST],LEGAL,Approval_Legal.pdf,storage/uploads/SC-0001/Approval_Legal.pdf,ADMIN_MIGRATION,="INSERT INTO script_files (request_id, file_type, original_filename, filepath, uploaded_by, uploaded_at) VALUES ("&A2&", '"&B2&"', '"&C2&"', '"&D2&"', '"&E2&"', GETDATE());"
+[ID_DARI_SCRIPT_REQUEST],CX,Review_CX.pdf,storage/uploads/SC-0001/Review_CX.pdf,ADMIN_MIGRATION,="INSERT INTO script_files (request_id, file_type, original_filename, filepath, uploaded_by, uploaded_at) VALUES ("&A3&", '"&B3&"', '"&C3&"', '"&D3&"', '"&E3&"', GETDATE());"

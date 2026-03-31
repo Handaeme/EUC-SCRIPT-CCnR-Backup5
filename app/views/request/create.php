@@ -158,7 +158,7 @@ $baseUrl = preg_replace('#/app/views/request$#', '', $baseUrl);
                         <strong style="font-size:11px; color:#d32f2f; letter-spacing:0.5px; min-width:80px;">KONVENSIONAL</strong>
                         <div class="checkbox-group">
                             <label><input type="checkbox" name="produk" value="Kartu Kredit"> Kartu Kredit</label>
-                            <label><input type="checkbox" name="produk" value="Extra Dana"> Extra Dana</label>
+                            <label><input type="checkbox" name="produk" value="Xtra Dana"> Xtra Dana</label>
                             <label><input type="checkbox" name="produk" value="KPR"> KPR</label>
                             <label><input type="checkbox" name="produk" value="Others" onchange="toggleInput('prod_konv_other', this.checked)"> Others</label>
                        </div>
@@ -171,7 +171,7 @@ $baseUrl = preg_replace('#/app/views/request$#', '', $baseUrl);
                         <strong style="font-size:11px; color:#16a34a; letter-spacing:0.5px; min-width:80px;">SYARIAH</strong>
                          <div class="checkbox-group">
                             <label><input type="checkbox" name="produk" value="Kartu Syariah"> Kartu Syariah</label>
-                            <label><input type="checkbox" name="produk" value="Extra Dana iB"> Extra Dana iB</label>
+                            <label><input type="checkbox" name="produk" value="Xtra Dana iB"> Xtra Dana iB</label>
                             <label><input type="checkbox" name="produk" value="KPR iB"> KPR iB</label>
                             <label><input type="checkbox" name="produk" value="Others" onchange="toggleInput('prod_syr_other', this.checked)"> Others</label>
                         </div>
@@ -563,7 +563,8 @@ $baseUrl = preg_replace('#/app/views/request$#', '', $baseUrl);
         currentActiveMedia = media;
         document.getElementById('active-media-label').innerText = media;
         
-        document.querySelectorAll('.btn-sheet').forEach(b => b.classList.remove('active'));
+        // [FIX] Only target Free Input tabs, not upload preview tabs
+        document.querySelectorAll('#static-tabs-nav .btn-sheet').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById('tab-btn-' + media);
         if (btn) btn.classList.add('active');
 
@@ -691,15 +692,26 @@ $baseUrl = preg_replace('#/app/views/request$#', '', $baseUrl);
         lastPreviewHtml = '';
         document.getElementById('fileInput').value = '';
         document.getElementById('file-list-container').style.display = 'none';
-        document.getElementById('preview-container').style.display = 'none';
+        document.getElementById('preview-container').style.display =
+        
+         'none';
         checkInputState(); // Unlock text tab
     }
 
-    function changeSheet(sheetId) {
-        // Hide all sheets
-        document.querySelectorAll('.sheet-pane').forEach(pane => pane.style.display = 'none');
-        // Remove active class from all buttons
-        document.querySelectorAll('.btn-sheet').forEach(btn => btn.classList.remove('active'));
+    function changeSheet(sheetId, btnIndex) {
+        // [FIX] Scope to preview-container only to avoid hiding Free Input editor
+        const container = document.getElementById('preview-container');
+        if (!container) return;
+        
+        // Hide all sheet panes within preview only
+        container.querySelectorAll('.sheet-pane').forEach(pane => pane.style.display = 'none');
+        
+        // Reset all pill-style tab buttons within preview (FileHandler uses .btn-sheet-tab)
+        container.querySelectorAll('.btn-sheet-tab').forEach(btn => {
+            btn.style.background = '#f3f4f6';
+            btn.style.color = '#4b5563';
+            btn.style.border = '1px solid #e5e7eb';
+        });
         
         // Show selected sheet
         const selectedSheet = document.getElementById(sheetId);
@@ -707,8 +719,13 @@ $baseUrl = preg_replace('#/app/views/request$#', '', $baseUrl);
             selectedSheet.style.display = 'block';
         }
         
-        // Set active class to clicked button
-        event.target.classList.add('active');
+        // Set active style on clicked button
+        if (event && event.target) {
+            const clickedBtn = event.target.closest('.btn-sheet-tab') || event.target;
+            clickedBtn.style.background = '#3b82f6';
+            clickedBtn.style.color = 'white';
+            clickedBtn.style.border = 'none';
+        }
     }
 
     let isSubmitting = false; // Global guard against double submit
@@ -768,7 +785,8 @@ $baseUrl = preg_replace('#/app/views/request$#', '', $baseUrl);
 
         if (inputMode === 'FILE_UPLOAD') {
             if (!selectedFile) { resetSubmitBtn(); return showModal('Validation Error', "Upload file!", 'error'); }
-            formData.append('script_file', selectedFile);
+            // [FIX] File already uploaded during preview step — no need to send again
+            // Server reuses the preview file from session
             
             // [FIX] Scrape EDITED content from the preview container
             const panes = document.querySelectorAll('#preview-container .sheet-pane');

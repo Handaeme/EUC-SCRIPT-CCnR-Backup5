@@ -1734,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('[Revision Versioning] MutationObserver initialized - spans will be preserved on deletion');
 });
 
-const IS_FILE_UPLOAD = <?php echo ($isFileUpload || !empty($files['TEMPLATE'])) ? 'true' : 'false'; ?>;
+const IS_FILE_UPLOAD = <?php echo (($request['mode'] ?? '') === 'FILE_UPLOAD') ? 'true' : 'false'; ?>;
 const SERVER_CONTENT = <?php echo json_encode($content); ?>;
 <?php
 // Extract real filename for JS
@@ -4317,7 +4317,17 @@ function executeAction(action) {
                     });
                 }
             } else {
-                console.error('[ERROR] No editor found for File Upload mode!');
+                // [FIX] Safety: Maybe this is actually Free Input with wrong IS_FILE_UPLOAD flag
+                const freeEditors = document.querySelectorAll('.free-input-editor');
+                if (freeEditors.length > 0) {
+                    console.warn('[FIX] IS_FILE_UPLOAD=true but found free-input-editors. Using Free Input save path.');
+                    freeEditors.forEach(editor => {
+                        const id = editor.getAttribute('data-id');
+                        if (id) updatedContent[id] = editor.innerHTML;
+                    });
+                } else {
+                    console.error('[ERROR] No editor found for any mode!');
+                }
             }
         }
     } else {

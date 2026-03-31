@@ -20,7 +20,7 @@ $_ppParams = $_GET;
 unset($_ppParams['page']);
 unset($_ppParams['per_page']);
 $_ppBase = '?' . http_build_query($_ppParams);
-$_ppOptions = [5, 10, 20, 30, 50];
+$_ppOptions = [10, 20, 30, 50, 100];
 ?>
 
 <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; margin-top:16px; border-top:1px solid #e2e8f0; flex-wrap:wrap; gap:10px;">

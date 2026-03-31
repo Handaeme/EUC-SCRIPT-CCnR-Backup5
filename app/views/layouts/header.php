@@ -244,5 +244,10 @@
             .logout-text { display: none; }
             .logout-icon { display: inline-block !important; }
         }
+        /* SLA Overdue Badge Pulse Animation */
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
     </style>
 

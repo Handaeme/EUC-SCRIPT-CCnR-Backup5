@@ -1,6 +1,8 @@
 <?php
 namespace App\Models;
 
+use App\Helpers\DateTimeHelper;
+
 class RequestModel {
     private $conn;
 
@@ -278,8 +280,9 @@ class RequestModel {
         try {
             // [FIX] DEDUP GUARD: Check for double submit (Same Title + Creator within 60s)
             // Now inside the lock, this check is 100% reliable
-            $dedupSql = "SELECT TOP 1 id FROM script_request WHERE title = ? AND created_by = ? AND DATEDIFF(SECOND, created_at, GETDATE()) < 60";
-            $dedupStmt = db_query($this->conn, $dedupSql, [$data['title'], $data['creator_id']]);
+            $nowStr = DateTimeHelper::now();
+            $dedupSql = "SELECT TOP 1 id FROM script_request WHERE title = ? AND created_by = ? AND DATEDIFF(SECOND, created_at, ?) < 60";
+            $dedupStmt = db_query($this->conn, $dedupSql, [$data['title'], $data['creator_id'], $nowStr]);
             if ($dedupStmt && $dedupRow = db_fetch_array($dedupStmt, DB_FETCH_ASSOC)) {
                  // Return specific error for double submit
                  return ['error' => 'Double submit detected. Please wait...'];
@@ -349,10 +352,12 @@ class RequestModel {
             $scriptNumber = sprintf("%s-%s-%s-%s-%02d", $jenisCode, $mediaCode, $dateCode, $counter, $version);
 
             // 3. Insert into script_request
+            $phpNow = DateTimeHelper::now();
+            $slaDeadline = DateTimeHelper::addWorkingDays($phpNow, DateTimeHelper::getSlaDays('SPV'));
             $sql = "INSERT INTO script_request (
                 ticket_id, script_number, title, jenis, produk, kategori, media, mode, 
-                status, current_role, version, created_by, selected_spv, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CREATED', 'Supervisor', ?, ?, ?, GETDATE()); SELECT SCOPE_IDENTITY() as id";
+                status, current_role, version, created_by, selected_spv, created_at, status_updated_at, sla_deadline
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CREATED', 'Supervisor', ?, ?, ?, ?, ?, ?); SELECT SCOPE_IDENTITY() as id";
 
             // Title (Use provided or auto-generated)
             $title = !empty($data['title']) ? $data['title'] : ("Script Request " . $data['jenis'] . " - " . $data['media']);
@@ -368,7 +373,10 @@ class RequestModel {
                 $data['mode'],
                 $version,
                 $data['creator_id'],
-                $data['selected_spv']
+                $data['selected_spv'],
+                $phpNow,
+                $phpNow,
+                $slaDeadline
             ];
 
             $stmt = db_query($this->conn, $sql, $params);
@@ -557,13 +565,14 @@ class RequestModel {
         // 4. Duplicate Request Record
         // [START UPDATE 02-Mar-2026] Fix: Build query dynamically to support databases where start_date might not exist yet
         $hasStartDate = isset($original['start_date']);
+        $phpNow = DateTimeHelper::now();
         $columns = "ticket_id, script_number, title, jenis, produk, kategori, media, mode, status, current_role, version, created_by, selected_spv, created_at, updated_at";
-        $valuesStr = "?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT_TEMP', 'Maker', ?, ?, ?, GETDATE(), GETDATE()";
+        $valuesStr = "?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT_TEMP', 'Maker', ?, ?, ?, ?, ?";
         
         $params = [
             $newTicketId,
             $newScriptNumber,
-            $title,
+            $original['title'],
             $original['jenis'],
             $original['produk'],
             $original['kategori'],
@@ -571,7 +580,9 @@ class RequestModel {
             $original['mode'],
             $newVersion,
             $creatorId,
-            $newSpvId // Use NEW SPV selection
+            $newSpvId, // Use NEW SPV selection
+            $phpNow,
+            $phpNow
         ];
 
         if ($hasStartDate) {
@@ -627,14 +638,16 @@ class RequestModel {
     }
 
     public function savePreviewContent($scriptId, $media, $content, $user) {
-        $sql = "INSERT INTO script_preview_content (request_id, media, content, updated_by, updated_at) VALUES (?, ?, ?, ?, GETDATE())";
-        $params = [$scriptId, $media, $content, $user];
+        $phpNow = DateTimeHelper::now();
+        $sql = "INSERT INTO script_preview_content (request_id, media, content, updated_by, updated_at) VALUES (?, ?, ?, ?, ?)";
+        $params = [$scriptId, $media, $content, $user, $phpNow];
         return db_query($this->conn, $sql, $params);
     }
 
     public function saveFileInfo($scriptId, $type, $originalName, $path, $user) {
-        $sql = "INSERT INTO script_files (request_id, file_type, original_filename, filepath, uploaded_by, uploaded_at) VALUES (?, ?, ?, ?, ?, GETDATE()); SELECT SCOPE_IDENTITY() AS id";
-        $params = [$scriptId, $type, $originalName, $path, $user];
+        $phpNow = DateTimeHelper::now();
+        $sql = "INSERT INTO script_files (request_id, file_type, original_filename, filepath, uploaded_by, uploaded_at) VALUES (?, ?, ?, ?, ?, ?); SELECT SCOPE_IDENTITY() AS id";
+        $params = [$scriptId, $type, $originalName, $path, $user, $phpNow];
         $stmt = db_query($this->conn, $sql, $params);
         
         if ($stmt === false) {
@@ -656,8 +669,9 @@ class RequestModel {
 
     public function deleteRequest($id, $userId) {
         // Soft Delete: Mark is_deleted = 1
-        $sql = "UPDATE script_request SET is_deleted = 1, updated_at = GETDATE() WHERE id = ?";
-        $res = db_query($this->conn, $sql, [$id]);
+        $phpNow = DateTimeHelper::now();
+        $sql = "UPDATE script_request SET is_deleted = 1, updated_at = ? WHERE id = ?";
+        $res = db_query($this->conn, $sql, [$phpNow, $id]);
         
         if ($res) {
             // Log Audit
@@ -692,10 +706,11 @@ class RequestModel {
      * Insert new version of preview content (for versioning system)
      */
     public function insertPreviewContentVersion($requestId, $media, $content, $workflowStage, $createdBy) {
+        $phpNow = DateTimeHelper::now();
         $sql = "INSERT INTO script_preview_content 
                 (request_id, media, content, workflow_stage, created_by, created_at) 
-                VALUES (?, ?, ?, ?, ?, GETDATE())";
-        return db_query($this->conn, $sql, [$requestId, $media, $content, $workflowStage, $createdBy]);
+                VALUES (?, ?, ?, ?, ?, ?)";
+        return db_query($this->conn, $sql, [$requestId, $media, $content, $workflowStage, $createdBy, $phpNow]);
     }
 
     /**
@@ -709,9 +724,19 @@ class RequestModel {
 
     public function updateStatus($id, $status, $nextRole, $user) {
         // Schema Fix: Table script_request has no 'updated_by' column. 
-        // We only update status, current_role, and updated_at.
-        $sql = "UPDATE script_request SET status = ?, current_role = ?, updated_at = GETDATE() WHERE id = ?";
-        $stmt = db_query($this->conn, $sql, [$status, $nextRole, $id]);
+        // We update status, current_role, updated_at, and SLA tracking fields.
+        $phpNow = DateTimeHelper::now();
+        
+        // Calculate SLA deadline for the next role (if applicable)
+        $slaDeadline = null;
+        $nextRoleUpper = strtoupper($nextRole);
+        if (in_array($nextRoleUpper, ['SUPERVISOR', 'SPV', 'PIC', 'PROCEDURE', 'MAKER'])) {
+            $roleKey = ($nextRoleUpper === 'SUPERVISOR') ? 'SPV' : $nextRoleUpper;
+            $slaDeadline = DateTimeHelper::addWorkingDays($phpNow, DateTimeHelper::getSlaDays($roleKey));
+        }
+        
+        $sql = "UPDATE script_request SET status = ?, current_role = ?, updated_at = ?, status_updated_at = ?, sla_deadline = ?, is_on_hold = 0 WHERE id = ?";
+        $stmt = db_query($this->conn, $sql, [$status, $nextRole, $phpNow, $phpNow, $slaDeadline, $id]);
         return $stmt;
     }
     
@@ -722,8 +747,9 @@ class RequestModel {
     }
 
     public function setDraftStatus($id, $hasDraft) {
-        $sql = "UPDATE script_request SET has_draft = ?, updated_at = GETDATE() WHERE id = ?";
-        return db_query($this->conn, $sql, [$hasDraft, $id]);
+        $phpNow = DateTimeHelper::now();
+        $sql = "UPDATE script_request SET has_draft = ?, updated_at = ? WHERE id = ?";
+        return db_query($this->conn, $sql, [$hasDraft, $phpNow, $id]);
     }
 
     public function updateRequestMetadata($id, $data) {
@@ -740,7 +766,9 @@ class RequestModel {
         
         if (empty($updates)) return true;
         
-        $sql = "UPDATE script_request SET " . implode(', ', $updates) . ", updated_at = GETDATE() WHERE id = ?";
+        $phpNow = DateTimeHelper::now();
+        $sql = "UPDATE script_request SET " . implode(', ', $updates) . ", updated_at = ? WHERE id = ?";
+        $params[] = $phpNow;
         $params[] = $id;
         
         return db_query($this->conn, $sql, $params);
@@ -793,20 +821,21 @@ class RequestModel {
     }
 
     public function logAudit($requestId, $scriptNumber, $action, $role, $user, $details) {
+        $phpNow = DateTimeHelper::now();
         // [FIX] DEDUP GUARD: Prevent duplicate audit entries from double submissions
         // Skip if same request + action + user was logged within last 30 seconds
         $dedupSql = "SELECT TOP 1 id FROM script_audit_trail 
                      WHERE request_id = ? AND action = ? AND user_id = ? 
-                     AND DATEDIFF(SECOND, created_at, GETDATE()) < 30";
-        $dedupStmt = db_query($this->conn, $dedupSql, [$requestId, $action, $user]);
+                     AND DATEDIFF(SECOND, created_at, ?) < 30";
+        $dedupStmt = db_query($this->conn, $dedupSql, [$requestId, $action, $user, $phpNow]);
         if ($dedupStmt && ($dedupRow = db_fetch_array($dedupStmt, DB_FETCH_ASSOC))) {
             // Duplicate detected — skip
             error_log("[DEDUP] Skipping duplicate audit: request=$requestId action=$action user=$user (existing id={$dedupRow['id']})");
             return true;
         }
 
-        $sql = "INSERT INTO script_audit_trail (request_id, script_number, action, user_role, user_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?, GETDATE())";
-        return db_query($this->conn, $sql, [$requestId, $scriptNumber, $action, $role, $user, $details]);
+        $sql = "INSERT INTO script_audit_trail (request_id, script_number, action, user_role, user_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        return db_query($this->conn, $sql, [$requestId, $scriptNumber, $action, $role, $user, $details, $phpNow]);
     }
 
     public function finalizeLibrary($requestId) {
@@ -836,8 +865,9 @@ class RequestModel {
         $cleanContent = $this->cleanReviewMarks($c['content']);
         
         // Default to INACTIVE (0) so Maker must activate it manually
-        $sql = "INSERT INTO script_library (request_id, script_number, media, content, version, created_at, is_active, start_date) VALUES (?, ?, ?, ?, ?, GETDATE(), 0, ?)";
-        $params = [$requestId, $req['script_number'], $c['media'], $cleanContent, $req['version'], $req['start_date']];
+        $phpNow = DateTimeHelper::now();
+        $sql = "INSERT INTO script_library (request_id, script_number, media, content, version, created_at, is_active, start_date) VALUES (?, ?, ?, ?, ?, ?, 0, ?)";
+        $params = [$requestId, $req['script_number'], $c['media'], $cleanContent, $req['version'], $phpNow, $req['start_date']];
         if (!db_query($this->conn, $sql, $params)) {
             return false;
         }
@@ -893,7 +923,9 @@ class RequestModel {
         // If $showInactive is FALSE (e.g. Agent view), show ONLY active scripts AND those with valid start date.
         // If TRUE (e.g. Maker/Admin view), show ALL.
         if (!$showInactive) {
-            $whereClauses[] = "(l.is_active = 1 AND (l.start_date IS NULL OR l.start_date <= CAST(GETDATE() AS DATE)))";
+            $todayDate = \App\Helpers\DateTimeHelper::today();
+            $whereClauses[] = "(l.is_active = 1 AND (l.start_date IS NULL OR CAST(l.start_date AS DATE) <= CAST(? AS DATE)))";
+            $params[] = $todayDate;
         }
         
         // Date Filter (on Library Creation/Publication Date) - Keep this as Published Date filter
@@ -1696,7 +1728,11 @@ class RequestModel {
                     'has_legal' => $req['has_legal'] ?? 0,
                     'has_cx' => $req['has_cx'] ?? 0,
                     'has_syariah' => $req['has_syariah'] ?? 0,
-                    'has_lpp' => $req['has_lpp'] ?? 0
+                    'has_lpp' => $req['has_lpp'] ?? 0,
+                    // SLA Tracking
+                    'sla_deadline' => $req['sla_deadline'] ?? null,
+                    'is_on_hold' => $req['is_on_hold'] ?? 0,
+                    'status_updated_at' => $req['status_updated_at'] ?? null
                 ];
             }
         }
@@ -2123,6 +2159,7 @@ class RequestModel {
         // (Since a request can have multiple rows for different media)
         
         $status = $isActive ? 1 : 0;
+        $phpNow = DateTimeHelper::now();
         
         $sql = "";
         $params = [];
@@ -2133,18 +2170,18 @@ class RequestModel {
                 $sql = "UPDATE script_library 
                         SET is_active = 1, 
                             start_date = ?,
-                            activated_at = GETDATE(), 
+                            activated_at = ?, 
                             activated_by = ? 
                         WHERE request_id = ?";
-                $params = [$startDate, $userId, $requestId];
+                $params = [$startDate, $phpNow, $userId, $requestId];
             } else {
                 $sql = "UPDATE script_library 
                         SET is_active = 1, 
-                            start_date = GETDATE(),
-                            activated_at = GETDATE(), 
+                            start_date = ?,
+                            activated_at = ?, 
                             activated_by = ? 
                         WHERE request_id = ?";
-                $params = [$userId, $requestId];
+                $params = [$phpNow, $phpNow, $userId, $requestId];
             }
         } else {
             // Deactivate (preserve activation history)
@@ -2170,16 +2207,18 @@ class RequestModel {
             $this->finalizeLibrary($requestId);
         }
 
+        $phpNow = DateTimeHelper::now();
         $params = [$isActive];
         
         if ($isActive == 1) {
             // Activating: save start_date, activated_at, activated_by
             $sql = "UPDATE script_library SET is_active = ?, 
                     start_date = ?, 
-                    activated_at = GETDATE(), 
+                    activated_at = ?, 
                     activated_by = ? 
                     WHERE request_id = ?";
-            $params[] = $startDate ?: date('Y-m-d'); // fallback to today
+            $params[] = $startDate ?: DateTimeHelper::today(); // fallback to today
+            $params[] = $phpNow;
             $params[] = $userId ?: ($_SESSION['user']['userid'] ?? 'UNKNOWN');
             $params[] = $requestId;
         } else {
@@ -2202,12 +2241,8 @@ class RequestModel {
     }
 
     public function getSqlServerTodayDate() {
-        $sql = "SELECT CAST(GETDATE() AS DATE) as today_date";
-        $stmt = db_query($this->conn, $sql);
-        if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
-            return $row['today_date'];
-        }
-        return date('Y-m-d'); // fallback
+        // [SLA FIX] Use PHP timezone instead of SQL Server GETDATE()
+        return DateTimeHelper::today();
     }
 
     /**
@@ -2424,5 +2459,86 @@ class RequestModel {
 
         return $data;
     }
-}
 
+    // ============================================
+    // SLA & AGING HELPER METHODS
+    // ============================================
+
+    /**
+     * Get count of overdue tickets for a given user/role.
+     * Used for notification badge in sidebar.
+     */
+    public function getOverdueCount($userid, $role) {
+        $phpNow = DateTimeHelper::now();
+        $where = "";
+        $params = [$phpNow];
+        
+        if ($role === 'SPV') {
+            if (in_array(strtolower($userid), ['admin', 'admin_script'])) {
+                $where = "AND status = 'CREATED'";
+            } else {
+                $where = "AND selected_spv = ? AND status = 'CREATED'";
+                $params[] = $userid;
+            }
+        } elseif ($role === 'PIC') {
+            $where = "AND status = 'APPROVED_SPV' AND (selected_pic = ? OR selected_pic IS NULL)";
+            $params[] = $userid;
+        } elseif ($role === 'PROCEDURE') {
+            $where = "AND status = 'APPROVED_PIC'";
+        }
+
+        $sql = "SELECT COUNT(*) as cnt FROM script_request 
+                WHERE sla_deadline IS NOT NULL 
+                AND sla_deadline < ? 
+                AND is_on_hold = 0 
+                AND is_deleted = 0 
+                $where";
+        
+        $stmt = db_query($this->conn, $sql, $params);
+        if ($stmt && $row = db_fetch_array($stmt, DB_FETCH_ASSOC)) {
+            return (int)$row['cnt'];
+        }
+        return 0;
+    }
+
+    /**
+     * Toggle On Hold status for a request (SLA Pause/Resume).
+     * Used by PROCEDURE role when waiting for Legal/CX documents.
+     */
+    public function toggleOnHold($requestId, $isOnHold, $userId) {
+        $phpNow = DateTimeHelper::now();
+        
+        if ($isOnHold) {
+            // PAUSE: Save current time as paused_at, set flag
+            $sql = "UPDATE script_request SET is_on_hold = 1, sla_paused_at = ?, updated_at = ? WHERE id = ?";
+            $result = db_query($this->conn, $sql, [$phpNow, $phpNow, $requestId]);
+        } else {
+            // RESUME: Calculate new deadline by adding remaining time
+            $req = $this->getRequestById($requestId);
+            $newDeadline = null;
+            
+            if ($req && !empty($req['sla_paused_at']) && !empty($req['sla_deadline'])) {
+                // Calculate how much time was remaining when paused
+                $pausedAt = new \DateTime($req['sla_paused_at']);
+                $oldDeadline = new \DateTime($req['sla_deadline']);
+                $remainingSeconds = max(0, $oldDeadline->getTimestamp() - $pausedAt->getTimestamp());
+                
+                // Add remaining seconds to current time
+                $nowDt = new \DateTime($phpNow);
+                $nowDt->modify("+{$remainingSeconds} seconds");
+                $newDeadline = $nowDt->format('Y-m-d H:i:s');
+            }
+            
+            $sql = "UPDATE script_request SET is_on_hold = 0, sla_paused_at = NULL, sla_deadline = ?, updated_at = ? WHERE id = ?";
+            $result = db_query($this->conn, $sql, [$newDeadline, $phpNow, $requestId]);
+        }
+        
+        // Log audit
+        $req = $this->getRequestById($requestId);
+        $action = $isOnHold ? 'SLA_PAUSED' : 'SLA_RESUMED';
+        $details = $isOnHold ? 'SLA paused (On Hold - Pending External)' : 'SLA resumed from hold';
+        $this->logAudit($requestId, $req['script_number'] ?? '', $action, 'PROCEDURE', $userId, $details);
+        
+        return $result;
+    }
+}
